@@ -1,0 +1,4 @@
+# 회원 폴더에 없는 파일은 공통 폴더(_common)에서 가져온다 — 2페이지 등 회원 파일이 우선
+/:member/files/*        /_common/files/:splat        200
+/:member/javascript/*   /_common/javascript/:splat   200
+/:member/style/*        /_common/style/:splat        200
