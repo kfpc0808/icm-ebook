@@ -72,12 +72,14 @@
 (function(){
   'use strict';
   var ICM_API = '';                      /* 서버 함수 주소 — 비어 있으면 데모 모드 */
+  var ICM_HOME = 'https://consultant.re.kr/cn/insight';   /* 전용 HomePage(관리자 '컨설턴트 홈페이지') — 서버 연결 후 자동 조회로 대체 */
   var PW = 1357, PH = 1920;              /* 페이지 이미지 기준 크기 */
   var AREAS = ['WM센터','세무','관세','법률','특허','M&A','기업신용평가','부동산','감정평가',
                '법무·행정','비용절감','기업금융','기업인증·R&D','노무',
                '경영컨설팅·자산관리','법정의무교육·기업교육','의료·건강','기타'];
   var BTN = {
-    2 : [{a:'',        x:682, y:1236, w:155, h:54}],
+    2 : [{a:'',        x:596, y:1236, w:155, h:54}],   /* 오른쪽 끝 = Director 박스 오른쪽 끝(750) */
+    3 : [{t:'home',    x:48,  y:370,  w:346, h:60, fs:17}],   /* 첫 칸(이너회원 자리) — 전용 HomePage */
     6 : [{a:'세무',     x:71,  y:292,  w:168, h:54},
          {a:'관세',     x:70,  y:1214, w:168, h:54}],
     7 : [{a:'법률',     x:72,  y:298,  w:168, h:54}],
@@ -101,6 +103,9 @@
     ' margin:0;padding:0;background:#3A332C!important;color:#D9BE87!important;border:1px solid #8A7550!important;',
     ' cursor:pointer;font-family:'+FONT+';font-weight:700;letter-spacing:-.02em;line-height:1;white-space:nowrap;',
     ' box-shadow:0 2px 8px rgba(0,0,0,.2);-webkit-tap-highlight-color:transparent;box-sizing:border-box}',
+    '.icm-home{gap:.45em;letter-spacing:0;padding:0 .7em!important}',
+    '.icm-home b{font-weight:700;font-size:1.15em;line-height:1;margin-top:-.08em}',
+    '.icm-home i{font-style:normal;font-weight:700;font-size:.7em;letter-spacing:.06em;padding:.28em .55em;border-radius:.35em;background:#D9BE87;color:#3A332C;margin-left:.2em}',
     '#icm-fab{position:fixed!important;right:14px;bottom:78px;z-index:2147483001;pointer-events:auto;',
     ' padding:12px 18px;border-radius:10px;background:#3A332C;color:#D9BE87;border:1px solid #8A7550;',
     ' font-family:'+FONT+';font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3)}',
@@ -175,7 +180,6 @@
       '<h3>전문가 상담 신청</h3>' +
       '<p class="icm-sub">남겨주신 정보는 담당 전문위원에게 바로 전달됩니다</p>' +
       '<div class="icm-form">' +
-        '<div class="icm-err" style="display:none"></div>' +
         '<div class="icm-fld"><label class="icm-lb" for="icm-area">상담 분야</label><select class="icm-in" id="icm-area"></select></div>' +
         '<div class="icm-row">' +
           '<div class="icm-fld"><label class="icm-lb" for="icm-name">성명</label><input class="icm-in" id="icm-name" type="text" maxlength="20" placeholder="홍길동" autocomplete="name"></div>' +
@@ -184,6 +188,7 @@
         '<div class="icm-fld"><label class="icm-lb" for="icm-comp">회사명 <i>(선택)</i></label><input class="icm-in" id="icm-comp" type="text" maxlength="40" placeholder="(주)대한산업" autocomplete="organization"></div>' +
         '<div class="icm-fld"><label class="icm-lb" for="icm-memo">문의 내용 <i>(선택)</i></label><textarea class="icm-in" id="icm-memo" maxlength="300" placeholder="궁금한 점을 간단히 적어주세요"></textarea></div>' +
         '<div class="icm-agree"><input id="icm-ok" type="checkbox"><label for="icm-ok">상담 연락을 위한 <b>개인정보 수집·이용</b>에 동의합니다. 수집 항목은 성명·연락처·회사명·문의내용이며, 상담 종료 후 지체 없이 파기합니다.</label></div>' +
+        '<div class="icm-err" style="display:none"></div>' +
         '<button class="icm-go" id="icm-send" type="button">신청하기</button>' +
       '</div>' +
       '<div class="icm-done" style="display:none">' +
@@ -210,6 +215,89 @@
     modal.querySelector('.icm-back').onclick = closeForm;
     dim.addEventListener('click', function(e){ if (e.target === dim) closeForm(); });
     modal.querySelector('#icm-send').onclick = send;
+    bindTouch(modal);
+    bindKeyboard(modal);
+    var telIn = modal.querySelector('#icm-tel');
+    telIn.addEventListener('input', function(){
+      var pos = telIn.value.length, v = fmtTel(telIn.value);
+      telIn.value = v;
+    });
+  }
+
+  /* ── 연락처 자동 하이픈 — 010-1234-5678 / 02-123-4567 / 031-123-4567 ── */
+  function fmtTel(v){
+    var d = String(v).replace(/\D/g,'').slice(0,11);
+    if (d.indexOf('02') === 0){
+      if (d.length <= 2) return d;
+      if (d.length <= 5) return d.slice(0,2)+'-'+d.slice(2);
+      if (d.length <= 9) return d.slice(0,2)+'-'+d.slice(2,d.length-4)+'-'+d.slice(-4);
+      return d.slice(0,2)+'-'+d.slice(2,6)+'-'+d.slice(6,10);
+    }
+    if (d.length <= 3) return d;
+    if (d.length <= 7) return d.slice(0,3)+'-'+d.slice(3);
+    if (d.length <= 10) return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
+    return d.slice(0,3)+'-'+d.slice(3,7)+'-'+d.slice(7);
+  }
+
+  /* ── 터치 처리 — 브로슈어 뷰어가 화면 전체의 터치를 가로채 클릭이 막히므로 직접 처리한다 ── */
+  var lastTouch = 0;
+  function bindTouch(root){
+    var sx = 0, sy = 0, moved = false;
+    ['touchstart','touchmove','touchend','pointerdown','pointerup','mousedown','mouseup','wheel'].forEach(function(ev){
+      root.addEventListener(ev, function(e){ e.stopPropagation(); }, {passive:true});
+    });
+    root.addEventListener('touchstart', function(e){
+      var t = e.touches[0]; sx = t.clientX; sy = t.clientY; moved = false;
+    }, {passive:true});
+    root.addEventListener('touchmove', function(e){
+      var t = e.touches[0];
+      if (Math.abs(t.clientX-sx) > 10 || Math.abs(t.clientY-sy) > 10) moved = true;
+    }, {passive:true});
+    root.addEventListener('touchend', function(e){
+      if (moved) return;
+      var tg = e.target;
+      var btn = tg.closest ? tg.closest('button') : null;
+      if (btn && root.contains(btn)){
+        e.preventDefault(); lastTouch = Date.now();
+        if (!btn.disabled && typeof btn.onclick === 'function') btn.onclick.call(btn, e);
+        return;
+      }
+      var agree = tg.closest ? tg.closest('.icm-agree') : null;
+      if (agree){
+        e.preventDefault(); lastTouch = Date.now();
+        var cb = agree.querySelector('input[type=checkbox]'); cb.checked = !cb.checked;
+        return;
+      }
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(tg.tagName)){
+        if (document.activeElement !== tg){ tg.focus(); }
+        return;
+      }
+      var lb = tg.closest ? tg.closest('label[for]') : null;
+      if (lb){ var f = document.getElementById(lb.getAttribute('for')); if (f) f.focus(); }
+    }, {passive:false});
+    /* 터치 직후 따라오는 클릭은 한 번만 처리 */
+    root.addEventListener('click', function(e){
+      if (Date.now() - lastTouch < 700){ e.stopPropagation(); if (e.target.tagName==='BUTTON') e.preventDefault(); }
+    }, true);
+  }
+
+  /* ── 휴대폰 자판이 입력칸을 가리지 않도록 — 보이는 영역에 맞춰 팝업을 줄이고 입력칸을 가운데로 ── */
+  function bindKeyboard(modal){
+    var vv = window.visualViewport;
+    function fit(){
+      if (!vv || dim.style.display === 'none') return;
+      dim.style.top    = vv.offsetTop + 'px';
+      dim.style.height = vv.height + 'px';
+      dim.style.bottom = 'auto';
+      modal.style.maxHeight = Math.max(240, vv.height - 12) + 'px';
+    }
+    if (vv){ vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
+    modal.addEventListener('focusin', function(e){
+      var f = e.target;
+      if (!/^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName)) return;
+      setTimeout(function(){ fit(); try{ f.scrollIntoView({block:'center', behavior:'smooth'}); }catch(_e){ f.scrollIntoView(); } }, 350);
+    });
+    modal.addEventListener('focusout', function(){ setTimeout(fit, 350); });
   }
 
   /* 주소에서 회원 아이디 — /shinje7377/ → shinje7377 */
@@ -237,7 +325,22 @@
     return h ? [ +h[1] ] : null;
   }
 
-  /* 화면에 그려진 페이지 영역 — 가로세로비가 브로슈어와 같은 요소를 찾는다 */
+  /* 페이지 번호에 해당하는 페이지 이미지의 화면 위치 — 뷰어가 files/page/N.jpg 로 그린다 */
+  function pageRect(n){
+    var re = new RegExp('files/page/' + n + '\\.(jpg|jpeg|png|webp)', 'i');
+    var best = null;
+    var imgs = document.getElementsByTagName('img');
+    for (var i=0;i<imgs.length;i++){
+      var im = imgs[i];
+      if (!re.test(im.getAttribute('src') || im.src || '')) continue;
+      var r = im.getBoundingClientRect();
+      if (r.width < 50 || r.height < 70) continue;
+      if (!best || r.width*r.height > best.width*best.height) best = r;
+    }
+    return best;
+  }
+
+  /* 화면에 그려진 페이지 영역 — (예비) 가로세로비가 브로슈어와 같은 요소를 찾는다 */
   function pageBoxes(){
     var want = PW/PH, out = [];
     var els = document.body.querySelectorAll('canvas,img,div');
@@ -248,6 +351,7 @@
       if (r.width < 90 || r.height < 120) continue;
       if (r.bottom < 10 || r.top > innerHeight-10) continue;
       if (Math.abs(r.width / r.height - want) > 0.035) continue;
+      if (r.width >= innerWidth - 6 && r.height >= innerHeight - 6) continue;   /* 화면 전체 컨테이너 제외 */
       out.push(r);
     }
     out.sort(function(a,b){ return a.left - b.left; });
@@ -275,30 +379,38 @@
 
     var pages = currentPages();
     var boxes = pageBoxes();
-    var key = JSON.stringify([pages, boxes.map(function(r){return [Math.round(r.left),Math.round(r.top),Math.round(r.width)];})]);
+    var key = JSON.stringify([pages, boxes.map(function(r){return [Math.round(r.left),Math.round(r.top),Math.round(r.width)];}),
+      (pages||[]).map(function(pn){ var r=pageRect(pn); return r?[Math.round(r.left),Math.round(r.top),Math.round(r.width)]:0; })]);
     if (key === lastKey) return;
     lastKey = key;
     layer.innerHTML = '';
     fab.style.display = 'none';
     if (!pages) return;
 
-    if (boxes.length && boxes.length >= pages.length){
+    var rects = pages.map(function(pn, idx){ return pageRect(pn) || boxes[Math.min(idx, boxes.length-1)] || null; });
+    if (rects.every(function(r){ return !!r; })){
       pages.forEach(function(pn, idx){
-        var box = boxes[Math.min(idx, boxes.length-1)];
+        var box = rects[idx];
         (BTN[pn] || []).forEach(function(b){
           var sx = box.width / PW, sy = box.height / PH;
+          if (b.t === 'home' && !ICM_HOME) return;
           var btn = document.createElement('button');
           btn.type = 'button';
-          btn.className = 'icm-btn';
-          btn.textContent = '상담요청';
+          btn.className = 'icm-btn' + (b.t === 'home' ? ' icm-home' : '');
+          if (b.t === 'home') btn.innerHTML = '전용 HomePage <b>&rsaquo;</b> <i>Click</i>';
+          else btn.textContent = '상담요청';
           btn.style.left   = (box.left + b.x*sx) + 'px';
           btn.style.top    = (box.top  + b.y*sy) + 'px';
           btn.style.width  = (b.w*sx) + 'px';
           btn.style.height = (b.h*sy) + 'px';
-          btn.style.fontSize     = Math.max(10, Math.round(21*sx)) + 'px';
+          btn.style.fontSize     = Math.max(9, Math.round((b.fs||21)*sx*10)/10) + 'px';
           btn.style.borderRadius = Math.max(4, Math.round(9*sx)) + 'px';
-          btn.onclick = function(){ openForm(b.a); };
+          btn.onclick = (b.t === 'home')
+            ? function(){ window.open(ICM_HOME, '_blank', 'noopener'); }
+            : function(){ openForm(b.a); };
+          tapBtn(btn);
           layer.appendChild(btn);
+          fitText(btn);
         });
       });
       if (DEBUG) boxes.forEach(function(r){
@@ -308,13 +420,30 @@
       });
     } else {
       var list = [];
-      pages.forEach(function(pn){ (BTN[pn]||[]).forEach(function(b){ list.push(b); }); });
+      pages.forEach(function(pn){ (BTN[pn]||[]).forEach(function(b){ if (b.t !== 'home') list.push(b); }); });
       if (list.length){
         fab.textContent = list[0].a ? (list[0].a + ' 상담요청') : '상담요청';
         fab.onclick = function(){ openForm(list[0].a); };
+        if (!fab._tap){ tapBtn(fab); fab._tap = 1; }
         fab.style.display = 'block';
       }
     }
+  }
+
+  /* 글자가 버튼 폭을 넘으면 맞을 때까지 줄인다 */
+  function fitText(b){
+    var fs = parseFloat(b.style.fontSize) || 12, n = 0;
+    while (b.scrollWidth > b.clientWidth + 1 && fs > 6 && n++ < 30){
+      fs -= 0.5; b.style.fontSize = fs + 'px';
+    }
+  }
+
+  function tapBtn(b){
+    var sx=0, sy=0, moved=false;
+    b.addEventListener('touchstart', function(e){ e.stopPropagation(); var t=e.touches[0]; sx=t.clientX; sy=t.clientY; moved=false; }, {passive:true});
+    b.addEventListener('touchmove',  function(e){ var t=e.touches[0]; if (Math.abs(t.clientX-sx)>10||Math.abs(t.clientY-sy)>10) moved=true; }, {passive:true});
+    b.addEventListener('touchend',   function(e){ e.stopPropagation(); if (moved) return; e.preventDefault(); lastTouch=Date.now(); b.onclick && b.onclick(e); }, {passive:false});
+    b.addEventListener('click',      function(e){ if (Date.now()-lastTouch < 700){ e.stopImmediatePropagation(); e.preventDefault(); } }, true);
   }
 
   function openForm(area){
@@ -325,10 +454,11 @@
     sel.selectedIndex = 0;
     if (area){ var i = AREAS.indexOf(area); if (i >= 0) sel.selectedIndex = i; }
     dim.style.display = 'flex';
+    dim.style.top = ''; dim.style.height = ''; dim.style.bottom = '';
   }
-  function closeForm(){ dim.style.display = 'none'; }
+  function closeForm(){ dim.style.display = 'none'; try{ document.activeElement && document.activeElement.blur(); }catch(_e){} }
 
-  function err(msg){ errBox.textContent = msg; errBox.style.display = 'block'; }
+  function err(msg){ errBox.textContent = msg; errBox.style.display = 'block'; try{ errBox.scrollIntoView({block:'center'}); }catch(_e){} }
   function esc(s){ var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
   function $(id){ return document.getElementById(id); }
 
