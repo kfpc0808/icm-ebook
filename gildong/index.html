@@ -63,93 +63,11 @@
   <noscript><div><hr/><ul><li><a href="files/basic-html/page1.html">Pages</a></li></ul><hr style="width:80%"/></div></noscript>
 
 <!-- ═══ ★ [2026-09-26] 상담요청 버튼 · 신청 팝업 (ICM) ═══
-     · 페이지 이미지 위의 지정 좌표에 버튼을 얹는다. 브로슈어 원본 파일(_common)은 건드리지 않는다.
-     · 주소의 아이디(ebook.icm.re.kr/{아이디}/)를 읽어 담당 전문위원을 식별한다.
+     · 브로슈어 뷰어가 본문 스타일을 걷어내므로, 스타일과 화면 요소를 모두 스크립트로 만들어 넣는다.
+     · 스타일이 사라지면 다시 붙이고, 숨김은 요소에 직접 걸어 스타일이 없어도 드러나지 않게 한다.
+     · 주소의 아이디(ebook.icm.re.kr/{아이디}/)로 담당 전문위원을 식별한다.
      · ?form=1 로 들어오면(인쇄물 QR) 팝업이 바로 열린다.
      · ICM_API 가 비어 있으면 데모 모드 — 저장·알림톡 없이 완료 화면만 표시한다. -->
-<style>
-#icm-layer{position:fixed;inset:0;z-index:99990;pointer-events:none}
-.icm-btn{position:absolute;pointer-events:auto;display:flex;align-items:center;justify-content:center;
-  background:#3A332C;color:#D9BE87;border:1px solid #8A7550;border-radius:9px;cursor:pointer;
-  font-family:"Noto Sans KR","Malgun Gothic",sans-serif;font-weight:700;letter-spacing:-.02em;
-  line-height:1;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.18);transition:opacity .18s;
-  -webkit-tap-highlight-color:transparent}
-.icm-btn:hover{background:#4A413A}
-.icm-btn.hide{opacity:0;pointer-events:none}
-#icm-fab{position:fixed;right:14px;bottom:70px;z-index:99991;display:none;pointer-events:auto;
-  padding:12px 18px;border-radius:10px;background:#3A332C;color:#D9BE87;border:1px solid #8A7550;
-  font-family:"Noto Sans KR","Malgun Gothic",sans-serif;font-size:14px;font-weight:700;cursor:pointer;
-  box-shadow:0 4px 14px rgba(0,0,0,.3)}
-#icm-dim{position:fixed;inset:0;z-index:99995;background:rgba(30,26,23,.82);display:none;
-  align-items:flex-end;justify-content:center;font-family:"Noto Sans KR","Malgun Gothic",sans-serif}
-#icm-dim.on{display:flex}
-#icm-modal{width:100%;max-width:430px;max-height:94vh;overflow-y:auto;background:#fff;
-  border-radius:18px 18px 0 0;padding:22px 22px 26px;box-sizing:border-box}
-@media(min-width:520px){#icm-dim{align-items:center}#icm-modal{border-radius:16px}}
-#icm-modal h3{margin:0 0 5px;font-size:19px;font-weight:700;color:#2E2A26}
-#icm-modal .sub{margin:0 0 16px;font-size:12.5px;color:#6E655C;line-height:1.6}
-#icm-modal label{display:block;font-size:12.5px;font-weight:500;color:#4A423C;margin:0 0 7px}
-#icm-modal .fld{margin-bottom:14px}
-#icm-modal .row{display:flex;gap:10px}
-#icm-modal .row .fld{flex:1}
-#icm-modal input[type=text],#icm-modal input[type=tel],#icm-modal select,#icm-modal textarea{
-  width:100%;box-sizing:border-box;padding:0 14px;height:50px;border:1px solid #D8D2C9;border-radius:9px;
-  background:#FBFAF8;font-family:inherit;font-size:15px;color:#2E2A26;outline:none}
-#icm-modal textarea{height:78px;padding:12px 14px;resize:none}
-#icm-modal input:focus,#icm-modal select:focus,#icm-modal textarea:focus{border-color:#8A7550}
-#icm-agree{display:flex;align-items:flex-start;gap:9px;padding:12px 13px;background:#F5F2ED;border-radius:9px;margin-bottom:16px}
-#icm-agree input{width:18px;height:18px;margin:1px 0 0;accent-color:#8A7550;flex-shrink:0}
-#icm-agree label{font-size:12px;color:#5A5148;line-height:1.65;margin:0;font-weight:400}
-#icm-send{width:100%;height:56px;border:0;border-radius:10px;background:#3A332C;color:#D9BE87;
-  font-family:inherit;font-size:16px;font-weight:700;cursor:pointer}
-#icm-send:disabled{opacity:.55;cursor:default}
-#icm-close{position:absolute;right:16px;top:14px;width:40px;height:40px;border:0;background:transparent;
-  font-size:20px;color:#6E655C;cursor:pointer}
-#icm-head{position:relative}
-#icm-err{display:none;margin:0 0 12px;font-size:12.5px;color:#C0392B;font-weight:600}
-#icm-done{display:none;text-align:center;padding:14px 0 4px}
-#icm-done .ok{width:64px;height:64px;margin:0 auto 14px;border-radius:32px;background:#F1EDE6;
-  display:flex;align-items:center;justify-content:center;font-size:28px;color:#8A7550}
-#icm-done h3{margin:0 0 10px}
-#icm-done p{margin:0 0 18px;font-size:14px;color:#5A5148;line-height:1.8}
-#icm-recap{background:#F7F5F1;border-radius:11px;padding:14px 16px;margin:0 0 18px;text-align:left}
-#icm-recap div{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:4px 0}
-#icm-recap span{color:#7A7168}
-#icm-recap b{color:#2E2A26;font-weight:700}
-</style>
-<div id="icm-layer"></div>
-<button id="icm-fab" type="button">상담요청</button>
-<div id="icm-dim">
-  <div id="icm-modal">
-    <div id="icm-head">
-      <h3>전문가 상담 신청</h3>
-      <p class="sub">남겨주신 정보는 담당 전문위원에게 바로 전달됩니다</p>
-      <button id="icm-close" type="button" aria-label="닫기">&times;</button>
-    </div>
-    <div id="icm-form">
-      <div id="icm-err"></div>
-      <div class="fld"><label for="icm-area">상담 분야</label><select id="icm-area"></select></div>
-      <div class="row">
-        <div class="fld"><label for="icm-name">성명</label><input id="icm-name" type="text" maxlength="20" placeholder="홍길동"></div>
-        <div class="fld"><label for="icm-tel">연락처</label><input id="icm-tel" type="tel" maxlength="20" placeholder="010-0000-0000"></div>
-      </div>
-      <div class="fld"><label for="icm-comp">회사명 <span style="color:#8A8177;font-weight:400">(선택)</span></label><input id="icm-comp" type="text" maxlength="40" placeholder="(주)대한산업"></div>
-      <div class="fld"><label for="icm-memo">문의 내용 <span style="color:#8A8177;font-weight:400">(선택)</span></label><textarea id="icm-memo" maxlength="300" placeholder="궁금한 점을 간단히 적어주세요"></textarea></div>
-      <div id="icm-agree">
-        <input id="icm-ok" type="checkbox">
-        <label for="icm-ok">상담 연락을 위한 <b>개인정보 수집·이용</b>에 동의합니다. 수집 항목은 성명·연락처·회사명·문의내용이며, 상담 종료 후 지체 없이 파기합니다.</label>
-      </div>
-      <button id="icm-send" type="button">신청하기</button>
-    </div>
-    <div id="icm-done">
-      <div class="ok">&#10003;</div>
-      <h3>신청이 접수되었습니다</h3>
-      <p>담당 전문위원에게 전달되었습니다.<br>영업일 기준 1일 이내에 연락드립니다.</p>
-      <div id="icm-recap"></div>
-      <button id="icm-again" type="button" style="width:100%;height:52px;border:0;border-radius:10px;background:#3A332C;color:#D9BE87;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer">브로슈어 계속 보기</button>
-    </div>
-  </div>
-</div>
 <script>
 (function(){
   'use strict';
@@ -158,9 +76,8 @@
   var AREAS = ['WM센터','세무','관세','법률','특허','M&A','기업신용평가','부동산','감정평가',
                '법무·행정','비용절감','기업금융','기업인증·R&D','노무',
                '경영컨설팅·자산관리','법정의무교육·기업교육','의료·건강','기타'];
-  /* 페이지별 버튼 — x,y,w,h 는 페이지 이미지(1357×1920) 좌표 */
   var BTN = {
-    2 : [{a:'',        x:682, y:1225, w:155, h:54}],
+    2 : [{a:'',        x:682, y:1236, w:155, h:54}],
     6 : [{a:'세무',     x:71,  y:292,  w:168, h:54},
          {a:'관세',     x:70,  y:1214, w:168, h:54}],
     7 : [{a:'법률',     x:72,  y:298,  w:168, h:54}],
@@ -175,62 +92,165 @@
     14: [{a:'기업인증·R&D', x:66, y:300, w:168, h:54}],
     15: [{a:'노무',     x:62,  y:299,  w:168, h:54}]
   };
-
-  var layer = document.getElementById('icm-layer');
-  var dim   = document.getElementById('icm-dim');
-  var fab   = document.getElementById('icm-fab');
-  var sel   = document.getElementById('icm-area');
   var DEBUG = /[?&]dbg=1/.test(location.search);
+  var FONT = '"Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif';
 
-  AREAS.forEach(function(a){ var o=document.createElement('option'); o.textContent=a; sel.appendChild(o); });
+  var CSS = [
+    '#icm-layer{position:fixed!important;left:0;top:0;right:0;bottom:0;z-index:2147483000;pointer-events:none}',
+    '.icm-btn{position:absolute!important;pointer-events:auto;display:flex!important;align-items:center;justify-content:center;',
+    ' margin:0;padding:0;background:#3A332C!important;color:#D9BE87!important;border:1px solid #8A7550!important;',
+    ' cursor:pointer;font-family:'+FONT+';font-weight:700;letter-spacing:-.02em;line-height:1;white-space:nowrap;',
+    ' box-shadow:0 2px 8px rgba(0,0,0,.2);-webkit-tap-highlight-color:transparent;box-sizing:border-box}',
+    '#icm-fab{position:fixed!important;right:14px;bottom:78px;z-index:2147483001;pointer-events:auto;',
+    ' padding:12px 18px;border-radius:10px;background:#3A332C;color:#D9BE87;border:1px solid #8A7550;',
+    ' font-family:'+FONT+';font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.3)}',
+    '#icm-dim{position:fixed!important;left:0;top:0;right:0;bottom:0;z-index:2147483600;background:rgba(30,26,23,.82);',
+    ' align-items:flex-end;justify-content:center;font-family:'+FONT+';-webkit-text-size-adjust:100%}',
+    '#icm-dim *{box-sizing:border-box;font-family:'+FONT+'}',
+    '#icm-modal{position:relative;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;background:#fff;',
+    ' border-radius:18px 18px 0 0;padding:22px 20px 24px;color:#2E2A26;text-align:left}',
+    '@media(min-width:520px){#icm-dim{align-items:center}#icm-modal{border-radius:16px}}',
+    '#icm-modal h3{margin:0 0 5px;padding:0;font-size:19px;font-weight:700;color:#2E2A26;line-height:1.4}',
+    '#icm-modal .icm-sub{margin:0 0 16px;font-size:12.5px;color:#6E655C;line-height:1.6}',
+    '#icm-modal .icm-lb{display:block;font-size:12.5px;font-weight:600;color:#4A423C;margin:0 0 6px;line-height:1.4}',
+    '#icm-modal .icm-lb i{font-style:normal;font-weight:400;color:#8A8177}',
+    '#icm-modal .icm-fld{margin:0 0 13px}',
+    '#icm-modal .icm-row{display:flex;gap:10px}',
+    '#icm-modal .icm-row .icm-fld{flex:1;min-width:0}',
+    '#icm-modal input.icm-in,#icm-modal select.icm-in,#icm-modal textarea.icm-in{display:block;width:100%;height:48px;margin:0;',
+    ' padding:0 13px;border:1px solid #D8D2C9;border-radius:9px;background:#FBFAF8;font-size:16px;color:#2E2A26;',
+    ' outline:none;-webkit-appearance:none;appearance:none;line-height:normal}',
+    '#icm-modal select.icm-in{padding-right:36px;background-image:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2712%27 height=%278%27%3E%3Cpath d=%27M1 1l5 5 5-5%27 fill=%27none%27 stroke=%27%236E655C%27 stroke-width=%271.6%27/%3E%3C/svg%3E");',
+    ' background-repeat:no-repeat;background-position:right 14px center}',
+    '#icm-modal textarea.icm-in{height:76px;padding:12px 13px;resize:none;line-height:1.5}',
+    '#icm-modal .icm-in:focus{border-color:#8A7550}',
+    '#icm-modal .icm-agree{display:flex;align-items:flex-start;gap:9px;padding:12px;background:#F5F2ED;border-radius:9px;margin:2px 0 16px}',
+    '#icm-modal .icm-agree input{width:19px;height:19px;margin:1px 0 0;flex-shrink:0;accent-color:#8A7550}',
+    '#icm-modal .icm-agree label{font-size:12px;color:#5A5148;line-height:1.65;margin:0;font-weight:400}',
+    '#icm-modal .icm-agree b{color:#2E2A26}',
+    '#icm-modal .icm-go{display:block;width:100%;height:54px;margin:0;border:0;border-radius:10px;background:#3A332C;',
+    ' color:#D9BE87;font-size:16px;font-weight:700;cursor:pointer;-webkit-appearance:none}',
+    '#icm-modal .icm-go:disabled{opacity:.55}',
+    '#icm-modal .icm-x{position:absolute;right:10px;top:10px;width:40px;height:40px;margin:0;padding:0;border:0;',
+    ' background:transparent;font-size:24px;line-height:40px;color:#6E655C;cursor:pointer}',
+    '#icm-modal .icm-err{margin:0 0 12px;font-size:12.5px;color:#C0392B;font-weight:600}',
+    '#icm-modal .icm-done{text-align:center;padding:10px 0 2px}',
+    '#icm-modal .icm-ok{width:62px;height:62px;margin:0 auto 14px;border-radius:31px;background:#F1EDE6;',
+    ' display:flex;align-items:center;justify-content:center;font-size:28px;color:#8A7550}',
+    '#icm-modal .icm-done p{margin:0 0 16px;font-size:14px;color:#5A5148;line-height:1.8}',
+    '#icm-modal .icm-recap{background:#F7F5F1;border-radius:11px;padding:12px 15px;margin:0 0 16px;text-align:left}',
+    '#icm-modal .icm-recap div{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:4px 0}',
+    '#icm-modal .icm-recap span{color:#7A7168}',
+    '#icm-modal .icm-recap b{color:#2E2A26;font-weight:700}'
+  ].join('\n');
+
+  function ensureCss(){
+    if (document.getElementById('icm-css')) return;
+    var st = document.createElement('style');
+    st.id = 'icm-css';
+    st.textContent = CSS;
+    (document.head || document.documentElement).appendChild(st);
+  }
+
+  function el(tag, attrs, html){
+    var e = document.createElement(tag);
+    if (attrs) for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (html != null) e.innerHTML = html;
+    return e;
+  }
+
+  var layer, fab, dim, sel, form, done, errBox, recap;
+
+  function build(){
+    ensureCss();
+    if (document.getElementById('icm-layer')) return;
+
+    layer = el('div', {id:'icm-layer'});
+    fab   = el('button', {id:'icm-fab', type:'button', style:'display:none'}, '상담요청');
+
+    dim   = el('div', {id:'icm-dim', style:'display:none'});
+    var modal = el('div', {id:'icm-modal'});
+    modal.innerHTML =
+      '<button class="icm-x" type="button" aria-label="닫기">&times;</button>' +
+      '<h3>전문가 상담 신청</h3>' +
+      '<p class="icm-sub">남겨주신 정보는 담당 전문위원에게 바로 전달됩니다</p>' +
+      '<div class="icm-form">' +
+        '<div class="icm-err" style="display:none"></div>' +
+        '<div class="icm-fld"><label class="icm-lb" for="icm-area">상담 분야</label><select class="icm-in" id="icm-area"></select></div>' +
+        '<div class="icm-row">' +
+          '<div class="icm-fld"><label class="icm-lb" for="icm-name">성명</label><input class="icm-in" id="icm-name" type="text" maxlength="20" placeholder="홍길동" autocomplete="name"></div>' +
+          '<div class="icm-fld"><label class="icm-lb" for="icm-tel">연락처</label><input class="icm-in" id="icm-tel" type="tel" maxlength="20" placeholder="010-0000-0000" autocomplete="tel"></div>' +
+        '</div>' +
+        '<div class="icm-fld"><label class="icm-lb" for="icm-comp">회사명 <i>(선택)</i></label><input class="icm-in" id="icm-comp" type="text" maxlength="40" placeholder="(주)대한산업" autocomplete="organization"></div>' +
+        '<div class="icm-fld"><label class="icm-lb" for="icm-memo">문의 내용 <i>(선택)</i></label><textarea class="icm-in" id="icm-memo" maxlength="300" placeholder="궁금한 점을 간단히 적어주세요"></textarea></div>' +
+        '<div class="icm-agree"><input id="icm-ok" type="checkbox"><label for="icm-ok">상담 연락을 위한 <b>개인정보 수집·이용</b>에 동의합니다. 수집 항목은 성명·연락처·회사명·문의내용이며, 상담 종료 후 지체 없이 파기합니다.</label></div>' +
+        '<button class="icm-go" id="icm-send" type="button">신청하기</button>' +
+      '</div>' +
+      '<div class="icm-done" style="display:none">' +
+        '<div class="icm-ok">&#10003;</div>' +
+        '<h3>신청이 접수되었습니다</h3>' +
+        '<p>담당 전문위원에게 전달되었습니다.<br>영업일 기준 1일 이내에 연락드립니다.</p>' +
+        '<div class="icm-recap"></div>' +
+        '<button class="icm-go icm-back" type="button">브로슈어 계속 보기</button>' +
+      '</div>';
+    dim.appendChild(modal);
+
+    document.body.appendChild(layer);
+    document.body.appendChild(fab);
+    document.body.appendChild(dim);
+
+    sel    = modal.querySelector('#icm-area');
+    form   = modal.querySelector('.icm-form');
+    done   = modal.querySelector('.icm-done');
+    errBox = modal.querySelector('.icm-err');
+    recap  = modal.querySelector('.icm-recap');
+    AREAS.forEach(function(a){ var o=document.createElement('option'); o.textContent=a; sel.appendChild(o); });
+
+    modal.querySelector('.icm-x').onclick    = closeForm;
+    modal.querySelector('.icm-back').onclick = closeForm;
+    dim.addEventListener('click', function(e){ if (e.target === dim) closeForm(); });
+    modal.querySelector('#icm-send').onclick = send;
+  }
 
   /* 주소에서 회원 아이디 — /shinje7377/ → shinje7377 */
   function memberId(){
     var seg = location.pathname.split('/').filter(Boolean);
-    return seg.length ? seg[seg.length-1].replace(/\.html?$/i,'') : '';
+    return seg.length ? decodeURIComponent(seg[seg.length-1]).replace(/\.html?$/i,'') : '';
   }
   var MID = memberId();
 
   /* 현재 펼친 페이지 번호 — 툴바 표시(6/16, 2-3/16)에서 읽는다 */
   function currentPages(){
-    var hit = null;
-    var els = document.querySelectorAll('input,div,span,b');
-    for (var i=0;i<els.length && !hit;i++){
+    var els = document.querySelectorAll('input,div,span,b,p');
+    for (var i=0;i<els.length;i++){
       var e = els[i];
-      if (e.children && e.children.length) continue;
-      var t = (e.value || e.textContent || '').trim();
+      if (dim && dim.contains(e)) continue;
+      if (e.tagName !== 'INPUT' && e.children && e.children.length) continue;
+      var t = (e.value || e.textContent || '').replace(/\s+/g,'');
       if (!t || t.length > 12) continue;
-      var m = t.match(/^(\d{1,3})\s*[-~]\s*(\d{1,3})\s*\/\s*\d{1,3}$/);
-      if (m){ hit = [ +m[1], +m[2] ]; break; }
-      m = t.match(/^(\d{1,3})\s*\/\s*\d{1,3}$/);
-      if (m){ hit = [ +m[1] ]; break; }
+      var m = t.match(/^(\d{1,3})[-~](\d{1,3})\/\d{1,3}$/);
+      if (m) return [ +m[1], +m[2] ];
+      m = t.match(/^(\d{1,3})\/\d{1,3}$/);
+      if (m) return [ +m[1] ];
     }
-    if (!hit){
-      var h = (location.hash||'').match(/p=(\d+)/);
-      if (h) hit = [ +h[1] ];
-    }
-    return hit;
+    var h = (location.hash||'').match(/p=(\d+)/);
+    return h ? [ +h[1] ] : null;
   }
 
   /* 화면에 그려진 페이지 영역 — 가로세로비가 브로슈어와 같은 요소를 찾는다 */
   function pageBoxes(){
-    var want = PW/PH, out = [], seen = {};
+    var want = PW/PH, out = [];
     var els = document.body.querySelectorAll('canvas,img,div');
     for (var i=0;i<els.length;i++){
       var e = els[i];
-      if (e.id==='icm-layer' || layer.contains(e) || dim.contains(e)) continue;
+      if (e === layer || e === dim || (layer && layer.contains(e)) || (dim && dim.contains(e))) continue;
       var r = e.getBoundingClientRect();
       if (r.width < 90 || r.height < 120) continue;
       if (r.bottom < 10 || r.top > innerHeight-10) continue;
-      var ratio = r.width / r.height;
-      if (Math.abs(ratio - want) > 0.035) continue;
-      var key = Math.round(r.left)+'_'+Math.round(r.top)+'_'+Math.round(r.width);
-      if (seen[key]) continue;
-      seen[key] = 1;
+      if (Math.abs(r.width / r.height - want) > 0.035) continue;
       out.push(r);
     }
     out.sort(function(a,b){ return a.left - b.left; });
-    /* 겹치는 상자는 가장 큰 것만 남긴다 */
     var keep = [];
     out.forEach(function(r){
       for (var i=0;i<keep.length;i++){
@@ -247,6 +267,12 @@
 
   var lastKey = '';
   function draw(){
+    build();
+    ensureCss();
+    if (!document.body.contains(layer)){ document.body.appendChild(layer); lastKey=''; }
+    if (!document.body.contains(dim))   document.body.appendChild(dim);
+    if (!document.body.contains(fab))   document.body.appendChild(fab);
+
     var pages = currentPages();
     var boxes = pageBoxes();
     var key = JSON.stringify([pages, boxes.map(function(r){return [Math.round(r.left),Math.round(r.top),Math.round(r.width)];})]);
@@ -257,32 +283,30 @@
     if (!pages) return;
 
     if (boxes.length && boxes.length >= pages.length){
-      /* 지면 위 정위치 */
       pages.forEach(function(pn, idx){
         var box = boxes[Math.min(idx, boxes.length-1)];
         (BTN[pn] || []).forEach(function(b){
           var sx = box.width / PW, sy = box.height / PH;
-          var el = document.createElement('button');
-          el.type = 'button';
-          el.className = 'icm-btn';
-          el.textContent = '상담요청';
-          el.style.left   = (box.left + b.x*sx) + 'px';
-          el.style.top    = (box.top  + b.y*sy) + 'px';
-          el.style.width  = (b.w*sx) + 'px';
-          el.style.height = (b.h*sy) + 'px';
-          el.style.fontSize   = Math.max(10, Math.round(21*sx)) + 'px';
-          el.style.borderRadius = Math.max(4, Math.round(9*sx)) + 'px';
-          el.onclick = function(){ openForm(b.a); };
-          layer.appendChild(el);
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'icm-btn';
+          btn.textContent = '상담요청';
+          btn.style.left   = (box.left + b.x*sx) + 'px';
+          btn.style.top    = (box.top  + b.y*sy) + 'px';
+          btn.style.width  = (b.w*sx) + 'px';
+          btn.style.height = (b.h*sy) + 'px';
+          btn.style.fontSize     = Math.max(10, Math.round(21*sx)) + 'px';
+          btn.style.borderRadius = Math.max(4, Math.round(9*sx)) + 'px';
+          btn.onclick = function(){ openForm(b.a); };
+          layer.appendChild(btn);
         });
       });
       if (DEBUG) boxes.forEach(function(r){
-        var d=document.createElement('div');
-        d.style.cssText='position:absolute;border:2px dashed #C0392B;pointer-events:none;left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;height:'+r.height+'px';
+        var d = document.createElement('div');
+        d.style.cssText = 'position:absolute;border:2px dashed #C0392B;pointer-events:none;left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;height:'+r.height+'px';
         layer.appendChild(d);
       });
     } else {
-      /* 지면을 못 찾으면 화면 우측 아래 버튼으로 대체 */
       var list = [];
       pages.forEach(function(pn){ (BTN[pn]||[]).forEach(function(b){ list.push(b); }); });
       if (list.length){
@@ -293,35 +317,32 @@
     }
   }
 
-  /* ── 팝업 ── */
   function openForm(area){
-    document.getElementById('icm-form').style.display = '';
-    document.getElementById('icm-done').style.display = 'none';
-    document.getElementById('icm-err').style.display = 'none';
-    sel.value = (area && AREAS.indexOf(area) >= 0) ? area : AREAS[0];
-    if (!area) sel.selectedIndex = 0;
-    dim.classList.add('on');
+    build();
+    form.style.display = '';
+    done.style.display = 'none';
+    errBox.style.display = 'none';
+    sel.selectedIndex = 0;
+    if (area){ var i = AREAS.indexOf(area); if (i >= 0) sel.selectedIndex = i; }
+    dim.style.display = 'flex';
   }
-  function closeForm(){ dim.classList.remove('on'); }
-  document.getElementById('icm-close').onclick = closeForm;
-  document.getElementById('icm-again').onclick = closeForm;
-  dim.addEventListener('click', function(e){ if (e.target === dim) closeForm(); });
+  function closeForm(){ dim.style.display = 'none'; }
 
-  function err(msg){
-    var e = document.getElementById('icm-err');
-    e.textContent = msg; e.style.display = 'block';
-  }
+  function err(msg){ errBox.textContent = msg; errBox.style.display = 'block'; }
+  function esc(s){ var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+  function $(id){ return document.getElementById(id); }
 
-  document.getElementById('icm-send').onclick = async function(){
-    var btn  = this;
-    var name = document.getElementById('icm-name').value.trim();
-    var tel  = document.getElementById('icm-tel').value.trim();
-    var comp = document.getElementById('icm-comp').value.trim();
-    var memo = document.getElementById('icm-memo').value.trim();
+  async function send(){
+    var btn  = $('icm-send');
+    var name = $('icm-name').value.trim();
+    var tel  = $('icm-tel').value.trim();
+    var comp = $('icm-comp').value.trim();
+    var memo = $('icm-memo').value.trim();
     var area = sel.value;
-    if (!name)  return err('성명을 입력해 주세요.');
-    if (!/^0\d{1,2}[-\s]?\d{3,4}[-\s]?\d{4}$/.test(tel.replace(/\s/g,''))) return err('연락처를 정확히 입력해 주세요.');
-    if (!document.getElementById('icm-ok').checked) return err('개인정보 수집·이용에 동의해 주세요.');
+    errBox.style.display = 'none';
+    if (!name) return err('성명을 입력해 주세요.');
+    if (!/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(tel.replace(/\s/g,''))) return err('연락처를 정확히 입력해 주세요.');
+    if (!$('icm-ok').checked) return err('개인정보 수집·이용에 동의해 주세요.');
     btn.disabled = true; btn.textContent = '전송 중…';
     try{
       if (ICM_API){
@@ -335,29 +356,30 @@
         await new Promise(function(r){ setTimeout(r, 600); });   /* 데모 모드 */
       }
       var now = new Date();
-      document.getElementById('icm-recap').innerHTML =
+      recap.innerHTML =
         '<div><span>상담 분야</span><b>' + esc(area) + '</b></div>' +
         '<div><span>신청자</span><b>' + esc(name) + '</b></div>' +
         '<div><span>접수</span><b>' + (now.getMonth()+1) + '월 ' + now.getDate() + '일 ' +
         String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + '</b></div>';
-      document.getElementById('icm-form').style.display = 'none';
-      document.getElementById('icm-done').style.display = 'block';
-      ['icm-name','icm-tel','icm-comp','icm-memo'].forEach(function(id){ document.getElementById(id).value=''; });
-      document.getElementById('icm-ok').checked = false;
+      form.style.display = 'none';
+      done.style.display = 'block';
+      ['icm-name','icm-tel','icm-comp','icm-memo'].forEach(function(id){ $(id).value=''; });
+      $('icm-ok').checked = false;
     }catch(e){
       err((e && e.message) || '전송에 실패했습니다. 잠시 후 다시 시도해 주세요.');
     }
     btn.disabled = false; btn.textContent = '신청하기';
-  };
+  }
 
-  function esc(s){ var d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
-
-  /* ?form=1 — 인쇄물 QR로 들어온 경우 팝업 바로 열기 */
-  if (/[?&]form=1/.test(location.search)) setTimeout(function(){ openForm(''); }, 1200);
-
-  setInterval(draw, 400);
-  addEventListener('resize', function(){ lastKey=''; draw(); });
-  setTimeout(draw, 1500);
+  function start(){
+    build();
+    if (/[?&]form=1/.test(location.search)) setTimeout(function(){ openForm(''); }, 1500);
+    setInterval(draw, 400);
+    addEventListener('resize', function(){ lastKey=''; draw(); });
+    setTimeout(draw, 1500);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
 })();
 </script>
 
