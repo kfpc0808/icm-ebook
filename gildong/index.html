@@ -71,8 +71,8 @@
 <script>
 (function(){
   'use strict';
-  var ICM_API = '';                      /* 서버 함수 주소 — 비어 있으면 데모 모드 */
-  var ICM_HOME = 'https://consultant.re.kr/cn/insight';   /* 전용 HomePage(관리자 '컨설턴트 홈페이지') — 서버 연결 후 자동 조회로 대체 */
+  var ICM_API = 'https://asia-northeast3-jarvia-platform.cloudfunctions.net/';   /* 서버 함수 주소 — 비우면 데모 모드 */
+  var ICM_HOME = '';                     /* 전용 HomePage — 서버(brochureInfo)가 아이디로 조회. 없으면 3페이지 버튼 없음 */
   var PW = 1357, PH = 1920;              /* 페이지 이미지 기준 크기 */
   var AREAS = ['WM센터','세무','관세','법률','특허','M&A','기업신용평가','부동산','감정평가',
                '법무·행정','비용절감','기업금융','기업인증·R&D','노무',
@@ -476,12 +476,8 @@
     btn.disabled = true; btn.textContent = '전송 중…';
     try{
       if (ICM_API){
-        var res = await fetch(ICM_API, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ memberId:MID, area:area, name:name, phone:tel, company:comp, memo:memo })
-        });
-        var js = await res.json().catch(function(){ return {}; });
-        if (!res.ok || js.ok === false) throw new Error(js.message || '전송에 실패했습니다.');
+        var r = await callFn('brochureRequest', { id:MID, area:area, name:name, phone:tel, company:comp, memo:memo, agree:true });
+        if (!r || r.ok !== true) throw new Error((r && r.message) || '전송에 실패했습니다.');
       } else {
         await new Promise(function(r){ setTimeout(r, 600); });   /* 데모 모드 */
       }
@@ -501,8 +497,28 @@
     btn.disabled = false; btn.textContent = '신청하기';
   }
 
+  /* onCall 규약 호출 — { data } 를 보내고 { result } 를 받는다 */
+  async function callFn(name, data){
+    var res = await fetch(ICM_API + name, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: data })
+    });
+    var js = await res.json().catch(function(){ return {}; });
+    if (!res.ok || js.error) throw new Error((js.error && js.error.message) || '서버 오류');
+    return js.result || {};
+  }
+
+  /* 전용 HomePage 링크 조회 — 실패하거나 없으면 빈값 그대로(버튼 숨김) */
+  function loadHome(){
+    if (!ICM_API || !MID) return;
+    callFn('brochureInfo', { id: MID }).then(function(r){
+      var u = String((r && r.homeUrl) || '');
+      if (/^https?:\/\//i.test(u)){ ICM_HOME = u; lastKey = ''; draw(); }
+    }).catch(function(){});
+  }
+
   function start(){
     build();
+    loadHome();
     if (/[?&]form=1/.test(location.search)) setTimeout(function(){ openForm(''); }, 1500);
     setInterval(draw, 400);
     addEventListener('resize', function(){ lastKey=''; draw(); });
