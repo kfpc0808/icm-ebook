@@ -513,7 +513,7 @@
     btn.disabled = true; btn.textContent = '전송 중…';
     try{
       if (ICM_API){
-        var r = await callFn('brochureRequest', { id:MID, area:area, name:name, phone:tel, company:comp, memo:memo, agree:true });
+        var r = await callFn('brochureRequest', { id:MID, c:LNK.c || '', area:area, name:name, phone:tel, company:comp, memo:memo, agree:true });
         if (!r || r.ok !== true) throw new Error((r && r.message) || '전송에 실패했습니다.');
       } else {
         await new Promise(function(r){ setTimeout(r, 600); });   /* 데모 모드 */
@@ -535,9 +535,9 @@
   }
 
   /* onCall 규약 호출 — { data } 를 보내고 { result } 를 받는다 */
-  async function callFn(name, data){
+  async function callFn(name, data, keep){
     var res = await fetch(ICM_API + name, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: data })
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ data: data }), keepalive: !!keep
     });
     var js = await res.json().catch(function(){ return {}; });
     if (!res.ok || js.error) throw new Error((js.error && js.error.message) || '서버 오류');
@@ -547,14 +547,177 @@
   /* 전용 HomePage 링크 조회 — 실패하거나 없으면 빈값 그대로(버튼 숨김) */
   function loadHome(){
     if (!ICM_API || !MID) return;
-    callFn('brochureInfo', { id: MID }).then(function(r){
+    callFn('brochureInfo', { id: MID, c: LNK.c || undefined, f: LNK.f ? 1 : undefined, vid: LNK.c ? LNK.vid : undefined }).then(function(r){
       var u = String((r && r.homeUrl) || '');
       if (/^https?:\/\//i.test(u)){ ICM_HOME = u; lastKey = ''; draw(); }
+      if (r && r.link) linkStart(r.link);
     }).catch(function(){});
+  }
+
+  /* ════ ★ [2026-09-27] 맞춤 링크(?c=코드) · 첫 열람 안내 · 인사 띠 · 공유하기 · 열람 기록 ════
+     · 안내 창은 처음 한 번만. 본인 링크는 서버가 기억(기기를 바꿔도 다시 안 물음), 공유받은 분은 이 기기에서 기억
+     · 동의한 경우에만 페이지별로 본 시간을 30초마다·창을 닫을 때 서버로 보낸다
+     · 화면을 가리지 않게 작고 조용하게 — 공유 버튼은 왼쪽 아래 작은 알약, 인사 띠는 5초 후 사라짐 */
+  var LNK = (function(){
+    var q = new URLSearchParams(location.search), c = q.get('c') || '';
+    if (!/^[A-Za-z0-9]{6,12}$/.test(c)) c = '';
+    var vid = '';
+    try { vid = localStorage.getItem('icm_vid') || ''; } catch(e){}
+    if (!/^[A-Za-z0-9_-]{8,40}$/.test(vid)){
+      var A='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789', b=new Uint8Array(16); (window.crypto||{}).getRandomValues ? crypto.getRandomValues(b) : b.forEach(function(_,i){b[i]=Math.random()*256;});
+      vid=''; for (var i=0;i<16;i++) vid += A[b[i]%A.length];
+      try { localStorage.setItem('icm_vid', vid); } catch(e){}
+    }
+    return { c:c, f: q.get('f') === '1', vid: vid, track:false, info:null };
+  })();
+
+  var CSS2 = [
+    '#icm-cs{position:fixed!important;left:0;top:0;right:0;bottom:0;z-index:2147483647;background:rgba(30,26,23,.55);display:none;align-items:flex-end;justify-content:center;font-family:'+FONT+'}',
+    '#icm-cs .b{width:100%;max-width:400px;background:#fff;border-radius:16px 16px 0 0;padding:16px 16px 14px;color:#2E2A26;box-sizing:border-box}',
+    '@media(min-width:520px){#icm-cs{align-items:center}#icm-cs .b{border-radius:14px}}',
+    '#icm-cs h4{margin:0 0 6px;font-size:15px;font-weight:700;line-height:1.4}',
+    '#icm-cs p{margin:0 0 6px;font-size:12px;line-height:1.65;color:#5A5148}',
+    '#icm-cs p b{color:#2E2A26}',
+    '#icm-cs .s{font-size:10.5px;color:#9A9086;line-height:1.55;margin:0 0 12px}',
+    '#icm-cs .ok{display:block;width:100%;height:40px;border:0;border-radius:9px;background:#3A332C;color:#D9BE87;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;margin:0}',
+    '#icm-cs .no{display:block;width:100%;margin:8px 0 0;padding:0;border:0;background:none;font-family:inherit;font-size:11px;color:#9A9086;text-decoration:underline;cursor:pointer}',
+    '#icm-rib{position:fixed!important;left:50%;top:10px;transform:translateX(-50%);z-index:2147483640;max-width:88vw;background:rgba(58,51,44,.92);color:#EDE7DE;border:1px solid #8A7550;border-radius:10px;padding:7px 12px;font-family:'+FONT+';font-size:11.5px;line-height:1.5;text-align:center;pointer-events:none;transition:opacity .6s}',
+    '#icm-rib b{color:#D9BE87}',
+    '#icm-share{position:fixed!important;left:12px;bottom:14px;z-index:2147483639;display:flex;align-items:center;gap:5px;height:30px;padding:0 11px 0 9px;border-radius:15px;background:rgba(58,51,44,.9);border:1px solid #8A7550;color:#D9BE87;font-family:'+FONT+';font-size:11.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}',
+    '#icm-share svg{width:13px;height:13px}',
+    '#icm-sh{position:fixed!important;left:0;top:0;right:0;bottom:0;z-index:2147483647;background:rgba(30,26,23,.45);display:none;align-items:flex-end;justify-content:center;font-family:'+FONT+'}',
+    '#icm-sh .b{width:100%;max-width:400px;background:#fff;border-radius:16px 16px 0 0;padding:14px 16px 16px;box-sizing:border-box;color:#2E2A26}',
+    '@media(min-width:520px){#icm-sh{align-items:center}#icm-sh .b{border-radius:14px}}',
+    '#icm-sh h4{margin:0 0 2px;font-size:14px;font-weight:700}',
+    '#icm-sh .d{margin:0 0 12px;font-size:11px;color:#8A8177}',
+    '#icm-sh .o{display:flex;gap:8px;margin-bottom:10px}',
+    '#icm-sh .o button{flex:1;margin:0;padding:10px 4px;border:1px solid #E4DFD7;border-radius:10px;background:#FBFAF8;font-family:inherit;font-size:11.5px;color:#4A423C;cursor:pointer}',
+    '#icm-sh .o button span{display:block;font-size:18px;margin-bottom:3px}',
+    '#icm-sh .x{display:block;width:100%;margin:0;padding:9px;border:0;border-radius:9px;background:#F1EDE6;font-family:inherit;font-size:12.5px;color:#4A423C;cursor:pointer}'
+  ].join('\n');
+  function ensureCss2(){
+    if (document.getElementById('icm-css2')) return;
+    var st = document.createElement('style'); st.id = 'icm-css2'; st.textContent = CSS2;
+    (document.head || document.documentElement).appendChild(st);
+  }
+
+  /* 뷰어 기본 공유 버튼 숨김 — 공유 표시가 없는 링크가 퍼지면 열람자 구분이 섞인다 */
+  function hideNativeShare(){
+    var ims = document.querySelectorAll('img[alt="sharethis"]');
+    for (var i=0;i<ims.length;i++){ var b = ims[i].closest ? ims[i].closest('.button') : ims[i].parentNode; if (b && b.style.display !== 'none') b.style.display = 'none'; }
+  }
+
+  /* 공유 링크 — 맞춤 링크면 공유 표시(f=1)를 붙이고, 아니면 주소 그대로 */
+  function shareUrl(){
+    var u = location.origin + location.pathname;
+    return LNK.c ? (u + '?c=' + LNK.c + '&f=1') : u;
+  }
+  function buildShare(){
+    ensureCss2();
+    if (document.getElementById('icm-share')) return;
+    var btn = document.createElement('button'); btn.id = 'icm-share'; btn.type = 'button';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#D9BE87" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>공유하기';
+    var sh = document.createElement('div'); sh.id = 'icm-sh'; sh.style.display = 'none';
+    var canNative = !!navigator.share;
+    sh.innerHTML = '<div class="b"><h4>이 브로슈어 공유하기</h4><p class="d">임원·실무 담당자에게 전달해 보세요</p><div class="o">'
+      + (canNative ? '<button type="button" data-s="app"><span>💬</span>카카오톡·앱</button>' : '')
+      + '<button type="button" data-s="copy"><span>🔗</span>링크 복사</button>'
+      + '<button type="button" data-s="sms"><span>✉️</span>문자</button></div>'
+      + '<button type="button" class="x" data-s="close">닫기</button></div>';
+    document.body.appendChild(btn); document.body.appendChild(sh);
+    btn.onclick = function(){ document.body.appendChild(sh); sh.style.display = 'flex'; };
+    tapBtn(btn);
+    var close = function(){ sh.style.display = 'none'; };
+    sh.addEventListener('click', function(e){ if (e.target === sh) close(); });
+    var bs = sh.querySelectorAll('button[data-s]');
+    for (var i=0;i<bs.length;i++) (function(b){
+      b.onclick = function(){
+        var k = b.getAttribute('data-s'), u = shareUrl(), t = '중소기업경영연구소 분야별 전문가 그룹 소개';
+        if (k === 'app'){ navigator.share({ title: t, url: u }).catch(function(){}); close(); }
+        else if (k === 'copy'){
+          var done = function(){ b.innerHTML = '<span>✅</span>복사됨'; setTimeout(function(){ b.innerHTML = '<span>🔗</span>링크 복사'; close(); }, 900); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done).catch(function(){ prompt('아래 주소를 복사하세요', u); });
+          else prompt('아래 주소를 복사하세요', u);
+        }
+        else if (k === 'sms'){ location.href = 'sms:?&body=' + encodeURIComponent(t + ' ' + u); close(); }
+        else close();
+      };
+    })(bs[i]);
+    bindTouch(sh);
+  }
+
+  /* 인사 띠 — 5초 후 사라짐 */
+  function showRibbon(info){
+    ensureCss2();
+    var who = info.shared ? '' : (info.clientName || '');
+    var fc = info.fcName ? (info.fcName + ' 전문위원') : '담당 전문위원';
+    var r = document.createElement('div'); r.id = 'icm-rib';
+    r.innerHTML = who ? ('<b>' + esc(who) + '님</b>께 드리는 자료입니다<br><span style="font-size:10.5px;opacity:.85">담당 · ' + esc(fc) + '</span>') : ('<b>' + esc(fc) + '</b>이 드리는 자료입니다<br><span style="font-size:10.5px;opacity:.85">중소기업경영연구소 분야별 전문가 그룹</span>');
+    document.body.appendChild(r);
+    setTimeout(function(){ r.style.opacity = '0'; setTimeout(function(){ if (r.parentNode) r.parentNode.removeChild(r); }, 700); }, 5000);
+  }
+
+  /* 첫 열람 안내 창 — 처음 한 번만 */
+  function askConsent(info, done){
+    ensureCss2();
+    var who = info.shared ? '' : (info.clientName || '');
+    var fc = (info.fcName || '담당') + ' 전문위원';
+    var cs = document.createElement('div'); cs.id = 'icm-cs'; cs.style.display = 'flex';
+    cs.innerHTML = '<div class="b"><h4>' + (who ? esc(who) + '님, 반갑습니다' : '반갑습니다') + '</h4>'
+      + '<p><b>' + esc(fc) + '</b>이 ' + (who ? esc(who) + '님께 ' : '') + '꼭 필요한 분야를 맞춤형으로 안내해 드릴 수 있도록, 이 자료의 <b>열람현황(열람 분야 및 시간)</b>이 담당 전문위원에게 전달됩니다.</p>'
+      + '<p class="s">연락처·위치 등 다른 정보는 전달되지 않으며, 원하지 않으시면 언제든 담당 전문위원에게 말씀해 주세요.</p>'
+      + '<button type="button" class="ok">확인하고 보기</button><button type="button" class="no">열람 기록 없이 보기</button></div>';
+    document.body.appendChild(cs);
+    bindTouch(cs);
+    var pick = function(agree){
+      cs.style.display = 'none'; if (cs.parentNode) cs.parentNode.removeChild(cs);
+      try { if (info.shared) localStorage.setItem('icm_cs_' + LNK.c, agree ? 'yes' : 'no'); } catch(e){}
+      callFn('brochureConsent', { c: LNK.c, f: info.shared ? 1 : undefined, vid: LNK.vid, agree: !!agree }).catch(function(){});
+      done(agree);
+    };
+    cs.querySelector('.ok').onclick = function(){ pick(true); };
+    cs.querySelector('.no').onclick = function(){ pick(false); };
+  }
+
+  function linkStart(info){
+    LNK.info = info;
+    var go = function(agree){ LNK.track = !!agree; showRibbon(info); if (LNK.track) trackStart(); };
+    var c = info.consent;
+    if (!c && info.shared){ try { c = localStorage.getItem('icm_cs_' + LNK.c) || ''; } catch(e){} }
+    if (c === 'yes' || c === 'no') go(c === 'yes');
+    else askConsent(info, go);
+  }
+
+  /* 열람 기록 — 보이는 페이지에 1초씩(펼침 보기면 반씩), 30초마다·창을 닫을 때 누적값 전송 */
+  var TRK = { pages:{}, sid:'', timer:0, sent:0 };
+  function trackStart(){
+    if (TRK.timer) return;
+    var A='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'; TRK.sid='';
+    for (var i=0;i<16;i++) TRK.sid += A[Math.floor(Math.random()*A.length)];
+    TRK.timer = setInterval(function(){
+      if (document.visibilityState !== 'visible') return;
+      if (document.getElementById('icm-dim') && document.getElementById('icm-dim').style.display === 'flex') return;   /* 상담 신청 창을 쓰는 동안은 제외 */
+      var ps = currentPages(); if (!ps || !ps.length) return;
+      ps.forEach(function(p){ TRK.pages[p] = (TRK.pages[p] || 0) + 1 / ps.length; });
+    }, 1000);
+    setInterval(function(){ trackSend(false); }, 30000);
+    document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'hidden') trackSend(true); });
+    addEventListener('pagehide', function(){ trackSend(true); });
+    setTimeout(function(){ trackSend(false); }, 8000);   /* 첫 기록은 조금 일찍 — 알림 대기열이 생기도록 */
+  }
+  function trackSend(keep){
+    if (!LNK.track || !LNK.c) return;
+    var out = {}, sum = 0;
+    Object.keys(TRK.pages).forEach(function(p){ var v = Math.floor(TRK.pages[p]); if (v > 0){ out[p] = v; sum += v; } });
+    if (!sum && TRK.sent) return;
+    TRK.sent++;
+    callFn('brochureViewLog', { c: LNK.c, f: LNK.f ? 1 : undefined, vid: LNK.vid, sid: TRK.sid, pages: out }, keep).catch(function(){});
   }
 
   function start(){
     build();
+    buildShare();   /* 공유하기 — 맞춤 링크면 공유 표시를 붙여서, 아니면 주소 그대로 */
+    hideNativeShare(); setInterval(hideNativeShare, 1500);
     loadHome();
     if (/[?&]form=1/.test(location.search)) setTimeout(function(){ openForm(''); }, 1500);
     setInterval(draw, 400);
