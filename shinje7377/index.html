@@ -406,6 +406,7 @@
     if (!pages) return;
 
     var rects = pages.map(function(pn, idx){ return pageRect(pn) || boxes[Math.min(idx, boxes.length-1)] || null; });
+    placeShare(rects);
     if (rects.every(function(r){ return !!r; })){
       pages.forEach(function(pn, idx){
         var box = rects[idx];
@@ -583,7 +584,7 @@
     '#icm-cs .no{display:block;width:100%;margin:8px 0 0;padding:0;border:0;background:none;font-family:inherit;font-size:11px;color:#9A9086;text-decoration:underline;cursor:pointer}',
     '#icm-rib{position:fixed!important;left:50%;top:10px;transform:translateX(-50%);z-index:2147483640;width:max-content;max-width:96vw;white-space:nowrap;background:rgba(58,51,44,.92);color:#EDE7DE;border:1px solid #8A7550;border-radius:10px;padding:7px 12px;font-family:'+FONT+';font-size:11.5px;line-height:1.5;text-align:center;pointer-events:none;transition:opacity .6s}',
     '#icm-rib b{color:#D9BE87}',
-    '#icm-share{position:fixed!important;left:10px;bottom:5px;z-index:2147483639;display:flex;align-items:center;gap:5px;height:30px;padding:0 11px 0 9px;border-radius:15px;background:rgba(58,51,44,.9);border:1px solid #8A7550;color:#D9BE87;font-family:'+FONT+';font-size:11.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}',
+    '#icm-share{position:fixed!important;right:10px;bottom:5px;z-index:2147483639;display:flex;align-items:center;justify-content:center;gap:4px;height:30px;padding:0 8px;border-radius:15px;box-sizing:border-box;white-space:nowrap;overflow:hidden;background:#3A332C;border:1px solid #8A7550;color:#D9BE87;font-family:'+FONT+';font-size:11.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}',
     '#icm-share svg{width:13px;height:13px}',
     '#icm-sh{position:fixed!important;left:0;top:0;right:0;bottom:0;z-index:2147483647;background:rgba(30,26,23,.45);display:none;align-items:flex-end;justify-content:center;font-family:'+FONT+'}',
     '#icm-sh .b{width:100%;max-width:400px;background:#fff;border-radius:16px 16px 0 0;padding:14px 16px 16px;box-sizing:border-box;color:#2E2A26}',
@@ -664,6 +665,23 @@
     if (!t){ t = document.createElement('div'); t.id = 'icm-toast'; document.body.appendChild(t); }
     t.textContent = msg; t.style.opacity = '1';
     clearTimeout(t._h); t._h = setTimeout(function(){ t.style.opacity = '0'; }, 1800);
+  }
+
+  /* 공유하기 위치 — 보이는 지면 중 오른쪽 지면의 오른쪽 아래 박스 자리(표지 기준 996,1774 ~ 1290,1850)에 붙인다.
+     보는 방식(카톡 안·홈 화면·PC)이 달라도 지면을 따라가므로 위치가 같다. 지면을 못 찾으면 화면 오른쪽 아래. */
+  function placeShare(rects){
+    var btn = document.getElementById('icm-share'); if (!btn) return;
+    var r = null;
+    (rects || []).forEach(function(x){ if (x && (!r || x.right > r.right)) r = x; });
+    if (!r || r.width < 120){ btn.style.left = btn.style.top = btn.style.width = btn.style.height = btn.style.fontSize = ''; btn.style.right = '10px'; btn.style.bottom = '5px'; return; }
+    var sx = r.width / PW, sy = r.height / PH;
+    var w = Math.max(84, 294 * sx * 1.08), h = Math.max(26, 76 * sy * 1.15), cx = r.left + 1143 * sx, cy = r.top + 1812 * sy;   /* 박스보다 조금 크게 덮어 테두리가 비치지 않게 */
+    btn.style.right = 'auto'; btn.style.bottom = 'auto';
+    btn.style.left = (cx - w / 2) + 'px';
+    btn.style.top = (cy - h / 2) + 'px';
+    btn.style.width = w + 'px'; btn.style.height = h + 'px';
+    btn.style.fontSize = Math.max(10.5, Math.min(13, Math.round(h * 0.42))) + 'px';
+    btn.style.borderRadius = Math.round(h * 0.28) + 'px';   /* 박스가 네모라 모서리를 살짝만 둥글게 — 뒤 박스가 비치지 않게 */
   }
 
   /* 인사 띠 — 5초 후 사라짐 */
