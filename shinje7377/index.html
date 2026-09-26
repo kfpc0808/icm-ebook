@@ -581,9 +581,9 @@
     '#icm-cs .s{font-size:10.5px;color:#9A9086;line-height:1.55;margin:0 0 12px}',
     '#icm-cs .ok{display:block;width:100%;height:40px;border:0;border-radius:9px;background:#3A332C;color:#D9BE87;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;margin:0}',
     '#icm-cs .no{display:block;width:100%;margin:8px 0 0;padding:0;border:0;background:none;font-family:inherit;font-size:11px;color:#9A9086;text-decoration:underline;cursor:pointer}',
-    '#icm-rib{position:fixed!important;left:50%;top:10px;transform:translateX(-50%);z-index:2147483640;max-width:88vw;background:rgba(58,51,44,.92);color:#EDE7DE;border:1px solid #8A7550;border-radius:10px;padding:7px 12px;font-family:'+FONT+';font-size:11.5px;line-height:1.5;text-align:center;pointer-events:none;transition:opacity .6s}',
+    '#icm-rib{position:fixed!important;left:50%;top:10px;transform:translateX(-50%);z-index:2147483640;width:max-content;max-width:96vw;white-space:nowrap;background:rgba(58,51,44,.92);color:#EDE7DE;border:1px solid #8A7550;border-radius:10px;padding:7px 12px;font-family:'+FONT+';font-size:11.5px;line-height:1.5;text-align:center;pointer-events:none;transition:opacity .6s}',
     '#icm-rib b{color:#D9BE87}',
-    '#icm-share{position:fixed!important;left:12px;bottom:14px;z-index:2147483639;display:flex;align-items:center;gap:5px;height:30px;padding:0 11px 0 9px;border-radius:15px;background:rgba(58,51,44,.9);border:1px solid #8A7550;color:#D9BE87;font-family:'+FONT+';font-size:11.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}',
+    '#icm-share{position:fixed!important;left:10px;bottom:5px;z-index:2147483639;display:flex;align-items:center;gap:5px;height:30px;padding:0 11px 0 9px;border-radius:15px;background:rgba(58,51,44,.9);border:1px solid #8A7550;color:#D9BE87;font-family:'+FONT+';font-size:11.5px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25)}',
     '#icm-share svg{width:13px;height:13px}',
     '#icm-sh{position:fixed!important;left:0;top:0;right:0;bottom:0;z-index:2147483647;background:rgba(30,26,23,.45);display:none;align-items:flex-end;justify-content:center;font-family:'+FONT+'}',
     '#icm-sh .b{width:100%;max-width:400px;background:#fff;border-radius:16px 16px 0 0;padding:14px 16px 16px;box-sizing:border-box;color:#2E2A26}',
@@ -593,6 +593,7 @@
     '#icm-sh .o{display:flex;gap:8px;margin-bottom:10px}',
     '#icm-sh .o button{flex:1;margin:0;padding:10px 4px;border:1px solid #E4DFD7;border-radius:10px;background:#FBFAF8;font-family:inherit;font-size:11.5px;color:#4A423C;cursor:pointer}',
     '#icm-sh .o button span{display:block;font-size:18px;margin-bottom:3px}',
+    '#icm-toast{position:fixed!important;left:50%;bottom:64px;transform:translateX(-50%);z-index:2147483647;background:rgba(46,42,38,.94);color:#F2EDE6;font-family:'+FONT+';font-size:12px;padding:8px 14px;border-radius:18px;pointer-events:none;transition:opacity .4s;white-space:nowrap}',
     '#icm-sh .x{display:block;width:100%;margin:0;padding:9px;border:0;border-radius:9px;background:#F1EDE6;font-family:inherit;font-size:12.5px;color:#4A423C;cursor:pointer}'
   ].join('\n');
   function ensureCss2(){
@@ -634,16 +635,35 @@
       b.onclick = function(){
         var k = b.getAttribute('data-s'), u = shareUrl(), t = '중소기업경영연구소 분야별 전문가 그룹 소개';
         if (k === 'app'){ navigator.share({ title: t, url: u }).catch(function(){}); close(); }
-        else if (k === 'copy'){
-          var done = function(){ b.innerHTML = '<span>✅</span>복사됨'; setTimeout(function(){ b.innerHTML = '<span>🔗</span>링크 복사'; close(); }, 900); };
-          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(done).catch(function(){ prompt('아래 주소를 복사하세요', u); });
-          else prompt('아래 주소를 복사하세요', u);
-        }
+        else if (k === 'copy'){ copyLink(u); close(); }
         else if (k === 'sms'){ location.href = 'sms:?&body=' + encodeURIComponent(t + ' ' + u); close(); }
         else close();
       };
     })(bs[i]);
     bindTouch(sh);
+  }
+
+  /* 링크 복사 — 카카오톡 안 브라우저처럼 복사 기능이 막힌 곳도 있어 두 방법을 차례로 시도, 안내는 작은 알림으로 */
+  function copyLink(u){
+    var ok = false;
+    try {
+      var ta = document.createElement('textarea');
+      ta.value = u; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
+      document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, u.length);
+      ok = document.execCommand('copy'); document.body.removeChild(ta);
+    } catch(e){}
+    if (ok) return miniToast('링크가 복사되었습니다');
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(u).then(function(){ miniToast('링크가 복사되었습니다'); })
+        .catch(function(){ prompt('아래 주소를 길게 눌러 복사하세요', u); });
+    } else prompt('아래 주소를 길게 눌러 복사하세요', u);
+  }
+  function miniToast(msg){
+    ensureCss2();
+    var t = document.getElementById('icm-toast');
+    if (!t){ t = document.createElement('div'); t.id = 'icm-toast'; document.body.appendChild(t); }
+    t.textContent = msg; t.style.opacity = '1';
+    clearTimeout(t._h); t._h = setTimeout(function(){ t.style.opacity = '0'; }, 1800);
   }
 
   /* 인사 띠 — 5초 후 사라짐 */
