@@ -406,7 +406,7 @@
     if (!pages) return;
 
     var rects = pages.map(function(pn, idx){ return pageRect(pn) || boxes[Math.min(idx, boxes.length-1)] || null; });
-    placeShare(rects);
+    placeShare(rects, pages);
     if (rects.every(function(r){ return !!r; })){
       pages.forEach(function(pn, idx){
         var box = rects[idx];
@@ -667,18 +667,20 @@
     clearTimeout(t._h); t._h = setTimeout(function(){ t.style.opacity = '0'; }, 1800);
   }
 
-  /* 공유하기 위치 — 보이는 지면 중 오른쪽 지면의 오른쪽 아래 박스 자리(표지 기준 996,1774 ~ 1290,1850)에 붙인다.
+  /* 공유하기 위치 — 보이는 지면 중 오른쪽 지면에 붙인다. 표지는 오른쪽 아래 박스 자리(996,1774 ~ 1290,1850),
+     나머지 페이지는 같은 가로 위치에서 지면 아래 선에 맞춘다.
      보는 방식(카톡 안·홈 화면·PC)이 달라도 지면을 따라가므로 위치가 같다. 지면을 못 찾으면 화면 오른쪽 아래. */
-  function placeShare(rects){
+  function placeShare(rects, pages){
     var btn = document.getElementById('icm-share'); if (!btn) return;
-    var r = null;
-    (rects || []).forEach(function(x){ if (x && (!r || x.right > r.right)) r = x; });
+    var r = null, pn = 0;
+    (rects || []).forEach(function(x, i){ if (x && (!r || x.right > r.right)){ r = x; pn = (pages || [])[i] || 0; } });
     if (!r || r.width < 120){ btn.style.left = btn.style.top = btn.style.width = btn.style.height = btn.style.fontSize = ''; btn.style.right = '10px'; btn.style.bottom = '5px'; return; }
     var sx = r.width / PW, sy = r.height / PH;
     var w = Math.max(84, 294 * sx * 1.08), h = Math.max(26, 76 * sy * 1.15), cx = r.left + 1143 * sx, cy = r.top + 1812 * sy;   /* 박스보다 조금 크게 덮어 테두리가 비치지 않게 */
     btn.style.right = 'auto'; btn.style.bottom = 'auto';
     btn.style.left = (cx - w / 2) + 'px';
-    btn.style.top = (cy - h / 2) + 'px';
+    /* 표지는 오른쪽 아래 박스 위, 나머지 페이지는 지면 아래 선에 버튼 아래쪽을 맞춘다(페이지 번호는 가려도 됨) */
+    btn.style.top = (pn === 1 ? (cy - h / 2) : (r.top + r.height - h)) + 'px';
     btn.style.width = w + 'px'; btn.style.height = h + 'px';
     btn.style.fontSize = Math.max(10.5, Math.min(13, Math.round(h * 0.42))) + 'px';
     btn.style.borderRadius = Math.round(h * 0.28) + 'px';   /* 박스가 네모라 모서리를 살짝만 둥글게 — 뒤 박스가 비치지 않게 */
