@@ -559,6 +559,17 @@
      · 안내 창은 처음 한 번만. 본인 링크는 서버가 기억(기기를 바꿔도 다시 안 물음), 공유받은 분은 이 기기에서 기억
      · 동의한 경우에만 페이지별로 본 시간을 30초마다·창을 닫을 때 서버로 보낸다
      · 화면을 가리지 않게 작고 조용하게 — 공유 버튼은 왼쪽 아래 작은 알약, 인사 띠는 5초 후 사라짐 */
+  /* ★ 보내기 모드 — 이너 Platform 에서 연 경우 일회용 열쇠(k)를 이 창에만 보관하고 주소에서 지운다 */
+  var OWN = (function(){
+    var q = new URLSearchParams(location.search), k = q.get('k') || '', send = q.get('send') === '1';
+    try {
+      if (/^[A-Za-z0-9]{24,48}$/.test(k)) sessionStorage.setItem('icm_own_k', k);
+      if (q.has('k') || q.has('send')){ q.delete('k'); q.delete('send'); history.replaceState({}, '', location.pathname + (q.toString() ? '?' + q.toString() : '') + location.hash); }
+      k = sessionStorage.getItem('icm_own_k') || '';
+    } catch(e){}
+    return { k: /^[A-Za-z0-9]{24,48}$/.test(k) ? k : '', send: send, list: null, fcName: '', tpl: '' };
+  })();
+
   var LNK = (function(){
     var q = new URLSearchParams(location.search), c = q.get('c') || '';
     if (!/^[A-Za-z0-9]{6,12}$/.test(c)) c = '';
@@ -594,7 +605,7 @@
     '#icm-sh .o{display:flex;gap:8px;margin-bottom:10px}',
     '#icm-sh .o button{flex:1;margin:0;padding:10px 4px;border:1px solid #E4DFD7;border-radius:10px;background:#FBFAF8;font-family:inherit;font-size:11.5px;color:#4A423C;cursor:pointer}',
     '#icm-sh .o button span{display:block;font-size:18px;margin-bottom:3px}',
-    '#icm-toast{position:fixed!important;left:50%;bottom:64px;transform:translateX(-50%);z-index:2147483647;background:rgba(46,42,38,.94);color:#F2EDE6;font-family:'+FONT+';font-size:12px;padding:8px 14px;border-radius:18px;pointer-events:none;transition:opacity .4s;white-space:nowrap}',
+    '#icm-toast{position:fixed!important;left:50%;top:42%;transform:translateX(-50%);z-index:2147483647;background:rgba(46,42,38,.94);color:#F2EDE6;font-family:'+FONT+';font-size:12px;padding:8px 14px;border-radius:18px;pointer-events:none;transition:opacity .4s;white-space:nowrap}',
     '#icm-sh .x{display:block;width:100%;margin:0;padding:9px;border:0;border-radius:9px;background:#F1EDE6;font-family:inherit;font-size:12.5px;color:#4A423C;cursor:pointer}'
   ].join('\n');
   function ensureCss2(){
@@ -627,7 +638,7 @@
       + '<button type="button" data-s="sms"><span>✉️</span>문자</button></div>'
       + '<button type="button" class="x" data-s="close">닫기</button></div>';
     document.body.appendChild(btn); document.body.appendChild(sh);
-    btn.onclick = function(){ document.body.appendChild(sh); sh.style.display = 'flex'; };
+    btn.onclick = function(){ if (OWN.k){ openOwner('pick'); return; } document.body.appendChild(sh); sh.style.display = 'flex'; };
     tapBtn(btn);
     var close = function(){ sh.style.display = 'none'; };
     sh.addEventListener('click', function(e){ if (e.target === sh) close(); });
@@ -645,7 +656,8 @@
   }
 
   /* 링크 복사 — 카카오톡 안 브라우저처럼 복사 기능이 막힌 곳도 있어 두 방법을 차례로 시도, 안내는 작은 알림으로 */
-  function copyLink(u){
+  function copyLink(u, msg){
+    msg = msg || '링크가 복사되었습니다';
     var ok = false;
     try {
       var ta = document.createElement('textarea');
@@ -653,9 +665,9 @@
       document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, u.length);
       ok = document.execCommand('copy'); document.body.removeChild(ta);
     } catch(e){}
-    if (ok) return miniToast('링크가 복사되었습니다');
+    if (ok) return miniToast(msg);
     if (navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(u).then(function(){ miniToast('링크가 복사되었습니다'); })
+      navigator.clipboard.writeText(u).then(function(){ miniToast(msg); })
         .catch(function(){ prompt('아래 주소를 길게 눌러 복사하세요', u); });
     } else prompt('아래 주소를 길게 눌러 복사하세요', u);
   }
@@ -684,6 +696,128 @@
     btn.style.width = w + 'px'; btn.style.height = h + 'px';
     btn.style.fontSize = Math.max(10.5, Math.min(13, Math.round(h * 0.42))) + 'px';
     btn.style.borderRadius = Math.round(h * 0.28) + 'px';   /* 박스가 네모라 모서리를 살짝만 둥글게 — 뒤 박스가 비치지 않게 */
+  }
+
+  /* ════ 보내기 모드 창 — 고객 선택 / 일반 링크 ════ */
+  var CSS3 = [
+    '#icm-osh{position:fixed!important;left:0;top:0;right:0;bottom:0;z-index:2147483647;background:rgba(30,26,23,.5);display:none;align-items:flex-end;justify-content:center;font-family:'+FONT+'}',
+    '#icm-osh *{box-sizing:border-box;font-family:'+FONT+'}',
+    '#icm-osh .b{width:100%;max-width:420px;max-height:88vh;display:flex;flex-direction:column;background:#fff;border-radius:16px 16px 0 0;padding:14px 14px 14px;color:#2E2A26}',
+    '@media(min-width:520px){#icm-osh{align-items:center}#icm-osh .b{border-radius:14px}}',
+    '#icm-osh .hd{display:flex;align-items:center;margin-bottom:8px}#icm-osh .hd h4{margin:0;font-size:14.5px;font-weight:700}',
+    '#icm-osh .hd button{margin:0 0 0 auto;border:0;background:none;font-size:20px;color:#8A8177;cursor:pointer;padding:0 4px}',
+    '#icm-osh .tabs{display:flex;background:#F1EDE6;border-radius:9px;padding:3px;margin-bottom:10px}',
+    '#icm-osh .tabs button{flex:1;margin:0;border:0;background:none;font-size:12px;font-weight:700;padding:8px 0;border-radius:7px;color:#8A8177;cursor:pointer}',
+    '#icm-osh .tabs button.on{background:#fff;color:#2E2A26;box-shadow:0 1px 3px rgba(0,0,0,.1)}',
+    '#icm-osh input.q{width:100%;height:36px;margin:0 0 6px;padding:0 11px;border:1px solid #E4DFD7;border-radius:9px;font-size:14px;outline:none}',
+    '#icm-osh .list{overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:120px;max-height:40vh}',
+    '#icm-osh .cl{display:flex;align-items:center;gap:9px;width:100%;margin:0;padding:9px 6px;border:0;border-bottom:1px solid #F1EDE6;background:#fff;font-size:13.5px;text-align:left;cursor:pointer;color:#2E2A26}',
+    '#icm-osh .cl.on{background:#FBF6EC}',
+    '#icm-osh .cl i{font-style:normal;width:28px;height:28px;border-radius:14px;background:#F1EDE6;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#6B5226;flex-shrink:0}',
+    '#icm-osh .cl em{margin-left:auto;font-style:normal;font-size:10px;font-weight:700;border-radius:8px;padding:2px 7px;background:#F1EDE6;color:#8A8177;white-space:nowrap}',
+    '#icm-osh .cl em.v{background:#C0392B;color:#fff}',
+    '#icm-osh textarea{width:100%;height:78px;margin:8px 0 6px;padding:8px 10px;border:1px solid #E4DFD7;border-radius:9px;background:#FBFAF8;font-size:13px;line-height:1.55;resize:none;outline:none}',
+    '#icm-osh .ln{background:#F5F2ED;border-radius:8px;padding:7px 9px;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#5A5148;margin-bottom:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '#icm-osh .two{display:grid;grid-template-columns:1fr 1fr;gap:7px}',
+    '#icm-osh .two button{margin:0;padding:11px 4px;border-radius:9px;font-size:12.5px;font-weight:700;border:1px solid #E4DFD7;background:#fff;color:#2E2A26;cursor:pointer}',
+    '#icm-osh .two .k{background:#FEE500;border-color:#FEE500;color:#3C1E1E}#icm-osh .two .c{background:#3A332C;border-color:#3A332C;color:#D9BE87}',
+    '#icm-osh .warn{background:#FFF6F4;border:1px solid #F0D7D2;border-radius:9px;padding:9px 11px;font-size:11.5px;line-height:1.6;color:#8A2E24;margin-bottom:10px}',
+    '#icm-osh .msg{font-size:12px;color:#8A8177;padding:14px 4px;text-align:center}',
+    '#icm-osh .back{margin:0 0 6px;padding:0;border:0;background:none;font-size:11.5px;color:#8A7550;cursor:pointer}'
+  ].join('\n');
+  var OSH = null, OSEL = null;
+  function ownerTpl(name){
+    var t = OWN.tpl || '{이름}님, 제가 참여하고 있는 중소기업경영연구소의 분야별 전문가 그룹을 소개드립니다. 세무·노무·법률 등 필요하신 분야를 살펴보시고, 브로슈어에서 바로 상담을 요청하실 수 있습니다.';
+    return t.split('{이름}').join(name);
+  }
+  function shareOrCopy(text, url, copyMsg){
+    if (navigator.share){ navigator.share({ text: text ? (text + '\n') : '', url: url }).catch(function(){}); }
+    else copyLink(text ? (text + '\n' + url) : url, copyMsg);
+  }
+  function openOwner(tab){
+    if (!OSH){
+      var st = document.createElement('style'); st.textContent = CSS3; (document.head || document.documentElement).appendChild(st);
+      OSH = document.createElement('div'); OSH.id = 'icm-osh'; OSH.style.display = 'none';
+      OSH.innerHTML = '<div class="b"><div class="hd"><h4>이 브로슈어 보내기</h4><button type="button" data-x="1" aria-label="닫기">×</button></div>'
+        + '<div class="tabs"><button type="button" data-t="pick">👥 고객 선택</button><button type="button" data-t="gen">🔗 일반 링크</button></div>'
+        + '<div class="body" style="display:flex;flex-direction:column;min-height:0;flex:1"></div></div>';
+      document.body.appendChild(OSH);
+      OSH.addEventListener('click', function(e){ if (e.target === OSH) OSH.style.display = 'none'; });
+      OSH.querySelector('[data-x]').onclick = function(){ OSH.style.display = 'none'; };
+      var tb = OSH.querySelectorAll('.tabs button');
+      for (var i=0;i<tb.length;i++) (function(b){ b.onclick = function(){ ownerTab(b.getAttribute('data-t')); }; })(tb[i]);
+      bindTouch(OSH);
+    }
+    document.body.appendChild(OSH); OSH.style.display = 'flex';
+    ownerTab(tab || 'pick');
+  }
+  function ownerTab(t){
+    var tb = OSH.querySelectorAll('.tabs button');
+    for (var i=0;i<tb.length;i++) tb[i].classList.toggle('on', tb[i].getAttribute('data-t') === t);
+    var body = OSH.querySelector('.body');
+    if (t === 'gen'){
+      var u = location.origin + location.pathname;
+      body.innerHTML = '<div class="warn">일반 링크는 <b>상담 신청만</b> 받습니다. 누가 봤는지 알려면 <b>고객 선택</b>으로 보내세요.</div>'
+        + '<div class="ln">' + esc(u) + '</div><div class="two"><button type="button" class="k">💬 카카오톡·앱</button><button type="button" class="c">링크 복사</button></div>'
+        + '<div class="msg" style="text-align:left;padding:10px 2px 0">카톡 프로필·명함·인쇄물용으로 쓰기 좋습니다.</div>';
+      body.querySelector('.k').onclick = function(){ shareOrCopy('', u); };
+      body.querySelector('.c').onclick = function(){ copyLink(u); };
+      return;
+    }
+    if (OSEL) return ownerCompose(OSEL);
+    body.innerHTML = '<input class="q" type="search" placeholder="🔍 고객 이름 검색"><div class="list"><div class="msg">고객 목록을 불러오는 중...</div></div>';
+    var q = body.querySelector('.q'), list = body.querySelector('.list');
+    var render = function(){
+      if (!OWN.list){ return; }
+      var kw = (q.value || '').trim();
+      var arr = OWN.list.filter(function(c){ return !kw || c.name.indexOf(kw) >= 0; });
+      if (!OWN.list.length){ list.innerHTML = '<div class="msg">내 고객 관리에 등록된 고객이 없습니다.<br>자비아 내 고객 관리에서 먼저 고객을 등록해 주세요.</div>'; return; }
+      if (!arr.length){ list.innerHTML = '<div class="msg">찾는 고객이 없습니다.</div>'; return; }
+      list.innerHTML = arr.slice(0, 300).map(function(c){
+        var tag = c.views ? '<em class="v">열람 ' + c.views + '</em>' : (c.sent ? '<em>안 열어봄</em>' : '<em>안 보냄</em>');
+        return '<button type="button" class="cl" data-id="' + esc(c.id) + '"><i>' + esc(c.name.slice(0,1)) + '</i><span>' + esc(c.name) + '</span>' + tag + '</button>';
+      }).join('');
+      var bs = list.querySelectorAll('.cl');
+      for (var i=0;i<bs.length;i++) (function(b){ b.onclick = function(){ var id = b.getAttribute('data-id'); var c = OWN.list.filter(function(x){ return x.id === id; })[0]; if (c) ownerCompose(c); }; })(bs[i]);
+    };
+    q.addEventListener('input', render);
+    if (OWN.list) render();
+    else callFn('brochureOwnerClients', { k: OWN.k }).then(function(r){
+      if (r && r.expired){ ownerExpired(); return; }
+      if (!r || !r.ok){ list.innerHTML = '<div class="msg">목록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</div>'; return; }
+      OWN.list = r.clients || []; OWN.fcName = r.fcName || ''; OWN.tpl = r.tpl || ''; render();
+    }).catch(function(){ list.innerHTML = '<div class="msg">목록을 불러오지 못했습니다.</div>'; });
+  }
+  function ownerExpired(){
+    OWN.k = ''; try { sessionStorage.removeItem('icm_own_k'); } catch(e){}
+    var body = OSH.querySelector('.body');
+    body.innerHTML = '<div class="msg">보내기 모드 시간이 지났습니다(2시간).<br>이너 Platform의 📘 브로슈어에서 다시 열어 주세요.</div>';
+  }
+  function ownerCompose(c){
+    OSEL = c;
+    var body = OSH.querySelector('.body');
+    body.innerHTML = '<button type="button" class="back">‹ 다른 고객 고르기</button><div style="font-size:13.5px;font-weight:700">' + esc(c.name) + '님께 보내기</div>'
+      + '<textarea>' + esc(ownerTpl(c.name)) + '</textarea><div class="ln">링크 만드는 중...</div>'
+      + '<div class="two"><button type="button" class="k" disabled>💬 카카오톡·앱</button><button type="button" class="c" disabled>인사말+링크 복사</button></div>';
+    body.querySelector('.back').onclick = function(){ OSEL = null; ownerTab('pick'); };
+    callFn('brochureOwnerIssue', { k: OWN.k, clientId: c.id }).then(function(r){
+      if (r && r.expired){ ownerExpired(); return; }
+      if (!r || !r.ok || !r.url){ body.querySelector('.ln').textContent = (r && r.error) || '링크를 만들지 못했습니다.'; return; }
+      c.sent = true;
+      body.querySelector('.ln').textContent = r.url;
+      var ta = body.querySelector('textarea'), k = body.querySelector('.k'), cp = body.querySelector('.c');
+      k.disabled = cp.disabled = false;
+      k.onclick = function(){ shareOrCopy(ta.value.trim(), r.url, '인사말과 링크가 복사되었습니다'); };
+      cp.onclick = function(){ copyLink(ta.value.trim() + '\n' + r.url, '인사말과 링크가 복사되었습니다'); };
+    }).catch(function(){ body.querySelector('.ln').textContent = '링크를 만들지 못했습니다.'; });
+  }
+  function ownerRibbon(){
+    ensureCss2();
+    var r = document.createElement('div'); r.id = 'icm-rib';
+    r.style.background = 'rgba(15,35,64,.94)'; r.style.borderColor = '#3E5C8A';
+    r.innerHTML = '<b style="color:#FFD58A">내 브로슈어 · 보내기 모드</b><br><span style="font-size:10.5px;opacity:.9">공유하기에서 고객을 고르면 고객별 링크로 보낼 수 있습니다</span>';
+    document.body.appendChild(r);
+    setTimeout(function(){ r.style.opacity = '0'; setTimeout(function(){ if (r.parentNode) r.parentNode.removeChild(r); }, 700); }, 6000);
   }
 
   /* 인사 띠 — 5초 후 사라짐 */
@@ -720,6 +854,7 @@
   }
 
   function linkStart(info){
+    if (OWN.k) return;   /* 보내기 모드(회원 본인) — 안내 창·열람 기록 없음 */
     LNK.info = info;
     var go = function(agree){ LNK.track = !!agree; showRibbon(info); if (LNK.track) trackStart(); };
     var c = info.consent;
@@ -757,6 +892,7 @@
   function start(){
     build();
     buildShare();   /* 공유하기 — 맞춤 링크면 공유 표시를 붙여서, 아니면 주소 그대로 */
+    if (OWN.k){ setTimeout(ownerRibbon, 1200); if (OWN.send) setTimeout(function(){ openOwner('pick'); }, 1800); }
     hideNativeShare(); setInterval(hideNativeShare, 1500);
     loadHome();
     if (/[?&]form=1/.test(location.search)) setTimeout(function(){ openForm(''); }, 1500);
