@@ -74,7 +74,7 @@
   var ICM_API = 'https://asia-northeast3-jarvia-platform.cloudfunctions.net/';   /* 서버 함수 주소 — 비우면 데모 모드 */
   var ICM_HOME = '';                     /* 전용 HomePage — 서버(brochureInfo)가 아이디로 조회. 없으면 3페이지 버튼 없음 */
   var PW = 1357, PH = 1920;              /* 페이지 이미지 기준 크기 */
-  var AREAS = ['WM센터','세무','관세','법률','특허','M&A','기업신용평가','부동산','감정평가',
+  var AREAS = ['세무',   /* ★ WM센터는 분야가 아니라 서비스 소개라 제외 */'관세','법률','특허','M&A','기업신용평가','부동산','감정평가',
                '법무·행정','비용절감','기업금융','기업인증·R&D','노무',
                '경영컨설팅·자산관리','법정의무교육·기업교육','의료·건강','기타'];
   var BTN = {
@@ -129,6 +129,9 @@
     ' background-repeat:no-repeat;background-position:right 14px center}',
     '#icm-modal textarea.icm-in{height:76px;padding:12px 13px;resize:none;line-height:1.5}',
     '#icm-modal .icm-in:focus{border-color:#8A7550}',
+    '#icm-modal .icm-chips{display:flex;flex-wrap:wrap;gap:6px}',
+    '#icm-modal .icm-chip{height:36px;margin:0;padding:0 12px;border:1px solid #D8D2C9;border-radius:18px;background:#FBFAF8;color:#4A423C;font-size:13.5px;font-weight:600;cursor:pointer;-webkit-appearance:none;line-height:1}',
+    '#icm-modal .icm-chip.on{background:#3A332C;color:#D9BE87;border-color:#3A332C}',
     '#icm-modal .icm-agree{display:flex;align-items:flex-start;gap:9px;padding:12px;background:#F5F2ED;border-radius:9px;margin:2px 0 16px}',
     '#icm-modal .icm-agree input{width:19px;height:19px;margin:1px 0 0;flex-shrink:0;accent-color:#8A7550}',
     '#icm-modal .icm-agree label{font-size:12px;color:#5A5148;line-height:1.65;margin:0;font-weight:400}',
@@ -164,7 +167,8 @@
     return e;
   }
 
-  var layer, fab, dim, sel, form, done, errBox, recap;
+  var layer, fab, dim, chips, form, done, errBox, recap;
+  var selArea = '';   /* 고객이 고른 분야 — 페이지 버튼이면 미리 선택, 2페이지·QR 이면 빈값 */
 
   function build(){
     ensureCss();
@@ -180,7 +184,7 @@
       '<h3>전문가 상담 신청</h3>' +
       '<p class="icm-sub">남겨주신 정보는 담당 전문위원에게 바로 전달됩니다</p>' +
       '<div class="icm-form">' +
-        '<div class="icm-fld"><label class="icm-lb" for="icm-area">상담 분야</label><select class="icm-in" id="icm-area"></select></div>' +
+        '<div class="icm-fld"><label class="icm-lb">상담 분야</label><div class="icm-chips" id="icm-area"></div></div>' +
         '<div class="icm-row">' +
           '<div class="icm-fld"><label class="icm-lb" for="icm-name">성명</label><input class="icm-in" id="icm-name" type="text" maxlength="20" placeholder="홍길동" autocomplete="name"></div>' +
           '<div class="icm-fld"><label class="icm-lb" for="icm-tel">연락처</label><input class="icm-in" id="icm-tel" type="tel" maxlength="20" placeholder="010-0000-0000" autocomplete="tel"></div>' +
@@ -204,12 +208,17 @@
     document.body.appendChild(fab);
     document.body.appendChild(dim);
 
-    sel    = modal.querySelector('#icm-area');
+    chips  = modal.querySelector('#icm-area');
     form   = modal.querySelector('.icm-form');
     done   = modal.querySelector('.icm-done');
     errBox = modal.querySelector('.icm-err');
     recap  = modal.querySelector('.icm-recap');
-    AREAS.forEach(function(a){ var o=document.createElement('option'); o.textContent=a; sel.appendChild(o); });
+    AREAS.forEach(function(a){
+      var c = document.createElement('button');
+      c.type = 'button'; c.className = 'icm-chip'; c.textContent = a; c.setAttribute('data-a', a);
+      c.onclick = function(){ setArea(a); };
+      chips.appendChild(c);
+    });
 
     modal.querySelector('.icm-x').onclick    = closeForm;
     modal.querySelector('.icm-back').onclick = closeForm;
@@ -451,10 +460,15 @@
     form.style.display = '';
     done.style.display = 'none';
     errBox.style.display = 'none';
-    sel.selectedIndex = 0;
-    if (area){ var i = AREAS.indexOf(area); if (i >= 0) sel.selectedIndex = i; }
+    setArea(AREAS.indexOf(area) >= 0 ? area : '');
     dim.style.display = 'flex';
     dim.style.top = ''; dim.style.height = ''; dim.style.bottom = '';
+  }
+  function setArea(a){
+    selArea = a || '';
+    var bs = chips.querySelectorAll('.icm-chip');
+    for (var i=0;i<bs.length;i++) bs[i].classList.toggle('on', bs[i].getAttribute('data-a') === selArea);
+    if (selArea) errBox.style.display = 'none';
   }
   function closeForm(){ dim.style.display = 'none'; try{ document.activeElement && document.activeElement.blur(); }catch(_e){} }
 
@@ -468,8 +482,9 @@
     var tel  = $('icm-tel').value.trim();
     var comp = $('icm-comp').value.trim();
     var memo = $('icm-memo').value.trim();
-    var area = sel.value;
+    var area = selArea;
     errBox.style.display = 'none';
+    if (!area) return err('상담 분야를 선택해 주세요.');
     if (!name) return err('성명을 입력해 주세요.');
     if (!/^0\d{1,2}-?\d{3,4}-?\d{4}$/.test(tel.replace(/\s/g,''))) return err('연락처를 정확히 입력해 주세요.');
     if (!$('icm-ok').checked) return err('개인정보 수집·이용에 동의해 주세요.');
