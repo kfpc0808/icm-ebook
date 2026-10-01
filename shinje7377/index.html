@@ -403,10 +403,11 @@
     lastKey = key;
     layer.innerHTML = '';
     fab.style.display = 'none';
-    if (!pages){ var sb = document.getElementById('icm-share'); if (sb) sb.style.display = 'none'; return; }
+    if (!pages){ var sb = document.getElementById('icm-share'); if (sb) sb.style.display = 'none'; var rb = document.getElementById('icm-rep'); if (rb) rb.style.display = 'none'; return; }
 
     var rects = pages.map(function(pn, idx){ return pageRect(pn) || boxes[Math.min(idx, boxes.length-1)] || null; });
     placeShare(rects, pages);
+    placeRep(rects, pages);   /* ★ [2026-10-01] 표지 리포트 */
     if (rects.every(function(r){ return !!r; })){
       pages.forEach(function(pn, idx){
         var box = rects[idx];
@@ -551,6 +552,7 @@
     callFn('brochureInfo', { id: MID, c: LNK.c || undefined, f: LNK.f ? 1 : undefined, vid: LNK.c ? LNK.vid : undefined }).then(function(r){
       var u = String((r && r.homeUrl) || '');
       if (/^https?:\/\//i.test(u)){ ICM_HOME = u; lastKey = ''; draw(); }
+      if (r && r.report && r.report.id && r.report.title){ REP = r.report; lastKey = ''; draw(); }   /* ★ [2026-10-01] 표지 리포트 */
       if (r && r.link) linkStart(r.link);
     }).catch(function(){});
   }
@@ -695,6 +697,69 @@
     btn.style.width = w + 'px'; btn.style.height = h + 'px';
     btn.style.fontSize = Math.max(10.5, Math.min(13, Math.round(h * 0.42))) + 'px';
     btn.style.borderRadius = Math.round(h * 0.28) + 'px';   /* 박스가 네모라 모서리를 살짝만 둥글게 — 뒤 박스가 비치지 않게 */
+  }
+
+  /* ════ ★ [2026-10-01] 표지 리포트 — 관리자가 승인한 회원 리포트 제목을 1페이지(표지) 왼쪽 아래에 ════
+     · 서버(brochureInfo)가 report 를 줄 때만 그린다. 없으면 아무것도 없음
+     · 박스·배경색 없이 글자만(은은한 그림자), 좌측 정렬. 「리포트 보기」는 작은 금색 테두리 버튼
+     · 크기는 표지 기준 좌표(1357×1920)로 공유하기처럼 지면을 따라간다. 작은 화면에서도 읽히도록 최소 글자 크기를 둔다
+     · 누르면 같은 창에서 ebook.icm.re.kr/{아이디}/report?r=… 로 이동(맞춤 링크 코드 c 는 이어서 넘김) */
+  var REP = null;
+  function repEsc(v){ var d = document.createElement('div'); d.textContent = v == null ? '' : String(v); return d.innerHTML; }
+  function repGo(){
+    if (!REP || !MID) return;
+    var q = 'r=' + encodeURIComponent(REP.id) + (LNK.c ? '&c=' + encodeURIComponent(LNK.c) + (LNK.f ? '&f=1' : '') : '');
+    location.href = '/' + encodeURIComponent(MID) + '/report?' + q;
+  }
+  function placeRep(rects, pages){
+    var el = document.getElementById('icm-rep');
+    var i1 = (pages || []).indexOf(1), r = i1 < 0 ? null : (rects || [])[i1];
+    if (!REP || !r || r.width < 120){ if (el) el.style.display = 'none'; return; }
+    if (!document.getElementById('icm-rep-css')){
+      var lk = document.createElement('link'); lk.rel = 'stylesheet';
+      lk.href = 'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700&display=swap';
+      document.head.appendChild(lk);
+      var st = document.createElement('style'); st.id = 'icm-rep-css';
+      st.textContent = '#icm-rep{position:fixed!important;z-index:2147483639;display:flex;flex-direction:column;align-items:flex-start;text-align:left;cursor:pointer;font-family:' + FONT + ';color:#F4ECDF;-webkit-tap-highlight-color:transparent}'
+        + '#icm-rep .l{display:flex;align-items:center;font-weight:700;color:#D9BE87;text-shadow:0 1px 3px rgba(0,0,0,.55);white-space:nowrap}'
+        + '#icm-rep .l i{display:inline-block;height:1px;background:#D9BE87}'
+        + '#icm-rep .t{font-family:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;font-weight:700;line-height:1.45;letter-spacing:-.02em;word-break:keep-all;color:#F4ECDF;text-shadow:0 1px 2px rgba(0,0,0,.6),0 0 14px rgba(20,15,12,.45);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}'
+        + '#icm-rep .m{color:#D8CDBD;text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}'
+        + '#icm-rep .b{display:inline-flex;align-items:center;gap:.45em;border:1px solid rgba(217,190,135,.75);background:rgba(28,22,18,.28);color:#E4CD9C;font-weight:500;letter-spacing:.12em;white-space:nowrap;box-sizing:border-box}'
+        + '#icm-rep .b svg{flex-shrink:0}';
+      document.head.appendChild(st);
+    }
+    if (!el){
+      el = document.createElement('div'); el.id = 'icm-rep'; el.setAttribute('role', 'link'); el.tabIndex = 0;
+      el.onclick = repGo;
+      el.onkeydown = function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); repGo(); } };
+      document.body.appendChild(el);
+    }
+    if (el.getAttribute('data-id') !== REP.id){
+      el.setAttribute('data-id', REP.id);
+      el.setAttribute('aria-label', '리포트 보기: ' + REP.title);
+      el.innerHTML = '<div class="l"><i></i>ICM INSIGHT</div><div class="t">' + repEsc(REP.title) + '</div>'
+        + '<div class="m">' + repEsc(REP.author ? REP.author + ' 전문위원' : '') + (REP.month ? (REP.author ? ' · ' : '') + repEsc(REP.month) : '') + '</div>'
+        + '<span class="b">리포트 보기<svg viewBox="0 0 24 24" fill="none" stroke="#E4CD9C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>';
+    }
+    if (!document.body.contains(el)) document.body.appendChild(el);
+    el.style.display = 'flex';
+    var sx = r.width / PW, sy = r.height / PH;
+    var fT = Math.max(13.5, 43.6 * sx), fL = Math.max(8.5, 20.8 * sx), fM = Math.max(10, 22.7 * sx), fB = Math.max(10.5, 22.7 * sx), hB = Math.max(26, 57 * sy);
+    el.style.left = (r.left + 91 * sx) + 'px';
+    el.style.width = Math.min(r.width * 0.62, 796 * sx * Math.max(1, fT / (43.6 * sx))) + 'px';
+    el.style.gap = Math.max(4, 19 * sy) + 'px';
+    var l = el.querySelector('.l'), t = el.querySelector('.t'), m = el.querySelector('.m'), b = el.querySelector('.b'), sv = b.querySelector('svg');
+    l.style.fontSize = fL + 'px'; l.style.letterSpacing = (fL * 0.32) + 'px'; l.style.gap = (fL * 0.9) + 'px';
+    l.querySelector('i').style.width = Math.max(14, 42 * sx) + 'px';
+    t.style.fontSize = fT + 'px';
+    m.style.fontSize = fM + 'px';
+    b.style.fontSize = fB + 'px'; b.style.height = hB + 'px'; b.style.padding = '0 ' + Math.max(10, 26 * sx) + 'px'; b.style.borderRadius = (hB / 2) + 'px';
+    b.style.marginTop = Math.max(2, 6 * sy) + 'px';
+    sv.style.width = sv.style.height = Math.max(10, fB) + 'px';
+    el.style.top = '0px';
+    var hgt = el.offsetHeight;
+    el.style.top = Math.max(r.top + 1080 * sy, r.top + 1852 * sy - hgt) + 'px';   /* 버튼 아랫선을 공유하기 아랫선에 맞추고, ICM 로고 쪽으로는 넘지 않게 */
   }
 
   /* ════ 보내기 모드 창 — 고객 선택 / 일반 링크 ════ */
