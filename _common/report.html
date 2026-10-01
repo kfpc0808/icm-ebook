@@ -193,12 +193,16 @@ body.pre .tb .bk,body.pre .pv a,body.pre .ac a{pointer-events:none}
   .pv .ls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
   .pv .ls a,.pv .ls a:last-child{flex-direction:column-reverse;align-items:flex-start;justify-content:flex-end;gap:10px;padding:22px;border:1px solid var(--line);border-radius:10px;background:#fff}
   .pv .ls a span{font-size:18px;font-weight:700}
-  .ft{margin-top:88px;padding:36px 40px 44px}
+  .ft{margin-top:88px;padding:28px 40px 32px}
   .ft .in{max-width:1120px;margin:0 auto;display:flex;justify-content:space-between;gap:40px;font-size:13px}
   .ft .in b{margin:0;flex-shrink:0}
-  .ft .in span,.ft .dis{max-width:760px}
-  .ft .dis strong{margin-top:0}
-  .ft .dis p{font-size:12px}
+  .ft .in span{max-width:760px}
+  .ft .in{display:block}   /* ★ 면책 고지는 본문 폭 전체로 이어 써서 줄 수를 줄인다 */
+  .ft .in b{display:block;margin:0 0 6px}
+  .ft .dis{display:block;font-size:12px;line-height:1.65}
+  .ft .dis strong{display:inline;margin:0 8px 0 0;font-size:12px}
+  .ft .dis p{display:inline;margin:0;font-size:12px}
+  .ft .dis p::after{content:' '}
   .bar{display:none}
   body.hasbar .ft{padding-bottom:44px}
   .tst{bottom:40px}
