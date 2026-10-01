@@ -757,6 +757,15 @@
     b.style.fontSize = fB + 'px'; b.style.height = hB + 'px'; b.style.padding = '0 ' + Math.max(10, 26 * sx) + 'px'; b.style.borderRadius = (hB / 2) + 'px';
     b.style.marginTop = Math.max(2, 6 * sy) + 'px';
     sv.style.width = sv.style.height = Math.max(10, fB) + 'px';
+    /* ★ 제목 줄바꿈 — 한 줄에 들어가면 한 줄, 넘치면 두 줄 길이가 비슷하게(마지막 줄에 한 단어만 남지 않게) */
+    t.style.width = ''; t.style.display = 'block';
+    var lh = parseFloat(getComputedStyle(t).lineHeight) || fT * 1.45, full = t.clientWidth;
+    if (Math.round(t.offsetHeight / lh) === 2){
+      var lo = full * 0.5, hi = full;
+      for (var k = 0; k < 9; k++){ var mid = (lo + hi) / 2; t.style.width = mid + 'px'; if (Math.round(t.offsetHeight / lh) > 2) lo = mid; else hi = mid; }
+      t.style.width = Math.ceil(hi) + 1 + 'px';
+    }
+    t.style.display = '';
     el.style.top = '0px';
     var hgt = el.offsetHeight;
     el.style.top = Math.max(r.top + 1080 * sy, r.top + 1852 * sy - hgt) + 'px';   /* 버튼 아랫선을 공유하기 아랫선에 맞추고, ICM 로고 쪽으로는 넘지 않게 */
