@@ -320,7 +320,7 @@ body.pre .tb .bk,body.pre .pv a,body.pre .ac a{pointer-events:none}
     var dt = (rep.date ? esc(rep.date) + ' · ' : '') + '읽는 데 약 ' + mins + '분';
     var ini = /^https:\/\//i.test(au.photoUrl || '') ? '<img src="' + esc(au.photoUrl) + '" alt="">' : esc(name.slice(0,1) || '·');
     var nwUrl = /^https?:\/\//i.test(au.networkUrl || '') ? au.networkUrl : '';
-    var nwHtml = nwUrl ? '<a class="nw" href="' + esc(nwUrl) + '" target="_blank" rel="noopener">전문가 네트워크 홈페이지<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' : '';
+    var nwHtml = nwUrl ? '<a class="nw ext" href="' + esc(nwUrl) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">전문가 네트워크 홈페이지<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' : '';
     var home = /^https?:\/\//i.test(au.homeUrl || '') ? au.homeUrl : '';
     var sumHtml = function(cls){
       return keys.length ? '<div class="sum ' + cls + '"><b>' + (keys.length === 3 ? '3줄 요약' : '핵심 요약') + '</b>'
@@ -332,7 +332,7 @@ body.pre .tb .bk,body.pre .pv a,body.pre .ac a{pointer-events:none}
     };
     var acHtml = function(cls){
       return '<div class="ac ' + cls + '"><div><b>' + esc(name) + ' 전문위원</b><span>ICM 기업경영연구소 · 경영컨설팅 부문</span></div>'
-        + (home ? '<a href="' + esc(home) + '" target="_blank" rel="noopener">컨설턴트 홈페이지 ›</a>' : '<a href="' + esc(BACK) + '">브로슈어 보기 ›</a>') + '</div>';
+        + (home ? '<a class="ext" href="' + esc(home) + '" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">컨설턴트 홈페이지 ›</a>' : '<a href="' + esc(BACK) + '">브로슈어 보기 ›</a>') + '</div>';
     };
     var h = '';
     h += '<section class="hero' + (keys.length ? ' ov' : '') + '"><div class="wrap hg"><div>'
@@ -447,6 +447,13 @@ body.pre .tb .bk,body.pre .pv a,body.pre .ac a{pointer-events:none}
     }catch(e){ err((e && e.message) || '전송에 실패했습니다. 잠시 후 다시 시도해 주세요.'); }
     b.disabled = false; b.textContent = '신청하기';
   }
+  /* ★ 외부 홈페이지 링크 — 출처 정보(Referer)를 보내지 않고, 카카오톡 안 브라우저에서는 폰 기본 브라우저로 연다
+     (consultant.re.kr 등 일부 서버가 카카오톡 인앱 접속·외부 유입을 403 으로 막는 경우 대비) */
+  document.addEventListener('click', function(e){
+    var a = e.target && e.target.closest ? e.target.closest('a.ext') : null;
+    if (!a || PRE) return;
+    if (/KAKAOTALK/i.test(navigator.userAgent || '')){ e.preventDefault(); location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(a.href); }
+  });
   $('f-go').onclick = send; $('mx').onclick = closeForm; $('dn-go').onclick = closeForm;
   $('dim').addEventListener('click', function(e){ if (e.target === $('dim')) closeForm(); });
   $('sh').onclick = share; $('bar-s').onclick = share; $('bar-c').onclick = openForm;
