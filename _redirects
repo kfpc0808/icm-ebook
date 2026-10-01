@@ -2,3 +2,5 @@
 /:member/files/*        /_common/files/:splat        200
 /:member/javascript/*   /_common/javascript/:splat   200
 /:member/style/*        /_common/style/:splat        200
+# ★ [2026-10-01] 브로슈어 리포트 — 고객용 리포트 화면 (회원 폴더에는 없고 공통 파일 하나)
+/:member/report         /_common/report.html         200
