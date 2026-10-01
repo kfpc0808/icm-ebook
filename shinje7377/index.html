@@ -426,7 +426,7 @@
           btn.style.fontSize     = Math.max(9, Math.round((b.fs||21)*sx*10)/10) + 'px';
           btn.style.borderRadius = Math.max(4, Math.round(9*sx)) + 'px';
           btn.onclick = (b.t === 'home')
-            ? function(){ window.open(ICM_HOME, '_blank', 'noopener'); }
+            ? function(){ openOut(ICM_HOME); }   /* ★ [2026-10-01] 출처 정보 미전송 · 카카오톡 안에서는 폰 기본 브라우저로 */
             : function(){ openForm(b.a); };
           tapBtn(btn);
           layer.appendChild(btn);
@@ -705,6 +705,12 @@
      · 크기는 표지 기준 좌표(1357×1920)로 공유하기처럼 지면을 따라간다. 작은 화면에서도 읽히도록 최소 글자 크기를 둔다
      · 누르면 같은 창에서 ebook.icm.re.kr/{아이디}/report?r=… 로 이동(맞춤 링크 코드 c 는 이어서 넘김) */
   var REP = null;
+  /* ★ [2026-10-01] 외부 홈페이지 열기 — 출처 정보(Referer)를 보내지 않고, 카카오톡 안 브라우저에서는 폰 기본 브라우저로 연다
+     (consultant.re.kr 서버가 카카오톡 인앱 접속·외부 유입을 403 으로 막는 경우 대비) */
+  function openOut(url){
+    if (/KAKAOTALK/i.test(navigator.userAgent || '')){ location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url); return; }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
   function repEsc(v){ var d = document.createElement('div'); d.textContent = v == null ? '' : String(v); return d.innerHTML; }
   function repGo(){
     if (!REP || !MID) return;
