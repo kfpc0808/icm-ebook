@@ -32,9 +32,12 @@ button{font-family:inherit}
 .tb{position:sticky;top:0;z-index:20;background:var(--ink0);border-bottom:1px solid rgba(217,190,135,.25);padding-top:env(safe-area-inset-top,0px)}
 .tb .in{height:56px;padding:0 8px;display:flex;align-items:center;justify-content:space-between}
 .tb .bk{display:inline-flex;align-items:center;gap:4px;height:44px;padding:0 8px;color:var(--gold);font-size:14px;text-decoration:none}
-.tb .lg{display:flex;align-items:center;gap:8px}
-.tb .lg i{width:28px;height:28px;border:1.5px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-style:normal;font-weight:700;color:var(--gold);letter-spacing:1px}
-.tb .lg b{font-size:14px;color:var(--paper);letter-spacing:.5px}
+.tb .lg{display:flex;align-items:center;gap:9px;color:var(--gold)}
+.tb .lg .mk-svg{width:26px;height:26px;flex-shrink:0}
+.tb .lg span{display:flex;flex-direction:column;line-height:1.2}
+.tb .lg b{font-size:14px;color:var(--paper);letter-spacing:1px}
+.tb .lg small{font-size:7.5px;color:var(--sub2);letter-spacing:.14em;margin-top:2px}
+@media(max-width:379px){.tb .lg small{display:none}}
 .tb .sh{width:44px;height:44px;border:none;background:transparent;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--gold);font-size:13px}
 .tb .sh span{display:none}
 .pg{height:3px;background:var(--ink)}
@@ -49,7 +52,7 @@ button{font-family:inherit}
 .hero .lb span{font-size:12px;color:var(--sub2);padding:2px 9px;border:1px solid rgba(217,190,135,.35);border-radius:11px}
 .hero h1{font-size:30px;font-weight:700;line-height:1.38;color:var(--paper);letter-spacing:-.025em;margin:16px 0 14px}
 .hero .sm{font-size:15.5px;line-height:1.75;color:var(--sub)}
-.au{display:flex;align-items:center;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid rgba(217,190,135,.25)}
+.au{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid rgba(217,190,135,.25)}
 .au .av{width:42px;height:42px;border-radius:50%;background:var(--gold);color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;flex-shrink:0}
 .au b{display:block;font-size:14px;color:var(--paper)}
 .au span{display:block;font-size:12px;color:var(--sub2);margin-top:2px}
@@ -113,13 +116,35 @@ body.hasbar .ft{padding-bottom:110px}
 .tst.on{opacity:1}
 body.pre .tb .bk,body.pre .pv a,body.pre .ac a{pointer-events:none}
 
+.au .av{overflow:hidden}
+.au .av img{width:100%;height:100%;object-fit:cover;display:block}
+.nw{display:inline-flex;align-items:center;gap:7px;height:40px;margin-top:14px;padding:0 16px;border:1px solid rgba(217,190,135,.6);border-radius:20px;color:var(--gold);font-size:13px;font-weight:500;letter-spacing:.02em;text-decoration:none;white-space:nowrap}
+.nw:hover{background:rgba(217,190,135,.1)}
+.nw svg{flex-shrink:0}
+.endm{display:flex;align-items:center;gap:14px;color:var(--gold2);margin-top:-8px}
+.endm i{flex:1;height:1px;background:var(--line2)}
+.endm .mk-svg{width:26px;height:26px}
+/* 공유 창 — 브로슈어 공유 창과 같은 모양 */
+.shd{position:fixed;inset:0;z-index:55;background:rgba(20,16,12,.55);display:none;align-items:flex-end;justify-content:center}
+.shd.on{display:flex}
+.shb{width:100%;max-width:440px;background:#fff;border-radius:20px 20px 0 0;padding:22px 20px calc(18px + env(safe-area-inset-bottom,0px))}
+.shb h3{font-size:18px;font-weight:700;color:#231D17}
+.shb p{font-size:13.5px;color:#7A6F64;margin:4px 0 16px}
+.shg{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:10px}
+.shg button{min-height:84px;border:1px solid #E5DED3;border-radius:12px;background:#FAF8F5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:14px;color:#3B332C;cursor:pointer}
+.shg button svg{width:24px;height:24px}
+.shc{width:100%;height:48px;margin-top:10px;border:none;border-radius:12px;background:#F0EBE3;color:#5E5145;font-size:15px;cursor:pointer}
+@media (min-width:640px){.shd{align-items:center}.shb{border-radius:16px}}
+
 /* ═══ PC (1024px 이상) — 매거진형: 큰 제목 + 본문 / 따라오는 사이드바 ═══ */
 @media (min-width:1024px){
   .only-pc{display:flex!important}
   .only-m{display:none!important}
   .tb .in{height:64px;padding:0 40px}
-  .tb .lg i{width:32px;height:32px;font-size:10px}
-  .tb .lg b{font-size:15px;letter-spacing:1px}
+  .tb .lg{gap:11px}
+  .tb .lg .mk-svg{width:32px;height:32px}
+  .tb .lg b{font-size:16px;letter-spacing:1.5px}
+  .tb .lg small{font-size:9.5px;letter-spacing:.18em}
   .tb .bk{padding:0}
   .tb .sh{width:auto;height:40px;padding:0 16px;border:1px solid rgba(217,190,135,.5);border-radius:20px}
   .tb .sh span{display:inline}
@@ -133,6 +158,9 @@ body.pre .tb .bk,body.pre .pv a,body.pre .ac a{pointer-events:none}
   .au b{font-size:16px}
   .au .org{display:block}
   .au .dt{flex-basis:100%;font-size:13px;color:var(--sub2);margin-top:14px}
+  .au .nw{margin-top:16px}
+  .endm{margin-top:-16px}
+  .endm .mk-svg{width:30px;height:30px}
   .grid{padding:72px 40px 0;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:80px;align-items:start;max-width:1200px;margin:0 auto}
   .art{gap:56px;max-width:700px}
   .sc{display:grid;grid-template-columns:76px 1fr;gap:8px}
@@ -198,7 +226,7 @@ body.pre .tb .bk,body.pre .pv a,body.pre .ac a{pointer-events:none}
 <div class="tb">
   <div class="in">
     <a class="bk" id="bk" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D9BE87" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span class="only-m">브로슈어</span><span class="only-pc">브로슈어로 돌아가기</span></a>
-    <div class="lg"><i>ICM</i><b>기업경영연구소</b></div>
+    <div class="lg"><svg class="mk-svg" viewBox="0 0 100 98" aria-hidden="true"><path fill="currentColor" d="M43.8,82.5L28.5,97.7H43.8Z M43.8,55.6L2,97.7H17.6L43.8,71.3Z M43.8,29.4L0,73V88L43.8,45.6Z M50.6,0L62.2,10.2V97.7H50.6Z M68.9,17L80.7,27.7V97.7H68.9Z M88.2,34.6L99.8,45.3V97.7H88.2Z"/></svg><span><b>기업경영연구소</b><small>INSTITUTE FOR CORPORATE MANAGEMENT</small></span></div>
     <button class="sh" id="sh" type="button" aria-label="리포트 공유"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D9BE87" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg><span>공유</span></button>
   </div>
   <div class="pg"><i id="pgb"></i></div>
@@ -210,6 +238,14 @@ body.pre .tb .bk,body.pre .pv a,body.pre .ac a{pointer-events:none}
   <button class="b2" type="button" id="bar-s" aria-label="리포트 공유"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C4420" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></button>
 </div>
 
+<div class="shd" id="shd" role="dialog" aria-modal="true" aria-label="리포트 공유">
+  <div class="shb">
+    <h3>이 리포트 공유하기</h3>
+    <p>지인 대표님께 전달해 보세요</p>
+    <div class="shg" id="shg"></div>
+    <button class="shc" type="button" id="shx">닫기</button>
+  </div>
+</div>
 <div class="dim" id="dim" role="dialog" aria-modal="true" aria-label="전문가 상담 신청">
   <div class="md">
     <button class="x" type="button" id="mx" aria-label="닫기">&times;</button>
@@ -282,7 +318,9 @@ body.pre .tb .bk,body.pre .pv a,body.pre .ac a{pointer-events:none}
     var chars = secs.reduce(function(n, s){ return n + String(s.b || '').length; }, String(rep.summary || '').length);
     var mins = Math.max(1, Math.round(chars / 500));
     var dt = (rep.date ? esc(rep.date) + ' · ' : '') + '읽는 데 약 ' + mins + '분';
-    var ini = esc(name.slice(0,1) || '·');
+    var ini = /^https:\/\//i.test(au.photoUrl || '') ? '<img src="' + esc(au.photoUrl) + '" alt="">' : esc(name.slice(0,1) || '·');
+    var nwUrl = /^https?:\/\//i.test(au.networkUrl || '') ? au.networkUrl : '';
+    var nwHtml = nwUrl ? '<a class="nw" href="' + esc(nwUrl) + '" target="_blank" rel="noopener">전문가 네트워크 홈페이지<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></a>' : '';
     var home = /^https?:\/\//i.test(au.homeUrl || '') ? au.homeUrl : '';
     var sumHtml = function(cls){
       return keys.length ? '<div class="sum ' + cls + '"><b>' + (keys.length === 3 ? '3줄 요약' : '핵심 요약') + '</b>'
@@ -294,13 +332,13 @@ body.pre .tb .bk,body.pre .pv a,body.pre .ac a{pointer-events:none}
     };
     var acHtml = function(cls){
       return '<div class="ac ' + cls + '"><div><b>' + esc(name) + ' 전문위원</b><span>ICM 기업경영연구소 · 경영컨설팅 부문</span></div>'
-        + (home ? '<a href="' + esc(home) + '" target="_blank" rel="noopener">전문위원 홈페이지 ›</a>' : '<a href="' + esc(BACK) + '">브로슈어 보기 ›</a>') + '</div>';
+        + (home ? '<a href="' + esc(home) + '" target="_blank" rel="noopener">컨설턴트 홈페이지 ›</a>' : '<a href="' + esc(BACK) + '">브로슈어 보기 ›</a>') + '</div>';
     };
     var h = '';
     h += '<section class="hero' + (keys.length ? ' ov' : '') + '"><div class="wrap hg"><div>'
       + '<div class="lb"><i></i><b>ICM INSIGHT</b>' + (rep.topic ? '<span>' + esc(rep.topic) + '</span>' : '') + '</div>'
       + '<h1 class="sf">' + esc(rep.title || '') + '</h1>' + (rep.summary ? '<p class="sm">' + esc(rep.summary) + '</p>' : '') + '</div>'
-      + '<div class="au"><span class="av sf">' + ini + '</span><div><b>' + esc(name) + ' 전문위원</b><span class="org">ICM 기업경영연구소 · 경영컨설팅 부문</span><span class="only-m">' + dt + '</span></div><span class="dt only-pc">' + dt + '</span></div>'
+      + '<div class="au"><span class="av sf">' + ini + '</span><div><b>' + esc(name) + ' 전문위원</b><span class="org">ICM 기업경영연구소 · 경영컨설팅 부문</span><span class="only-m">' + dt + '</span></div><span class="dt only-pc">' + dt + '</span>' + (nwHtml ? '<div style="flex-basis:100%">' + nwHtml + '</div>' : '') + '</div>'
       + '</div></section>';
     h += sumHtml('m only-m');
     h += '<div class="grid"><article class="art">';
@@ -309,6 +347,7 @@ body.pre .tb .bk,body.pre .pv a,body.pre .ac a{pointer-events:none}
       if (i === 1 && rep.quote) h += quoteHtml(rep.quote, name);
     });
     if (secs.length < 2 && rep.quote) h += quoteHtml(rep.quote, name);
+    h += '<div class="endm" aria-hidden="true"><i></i><svg class=\"mk-svg\" viewBox=\"0 0 100 98\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M43.8,82.5L28.5,97.7H43.8Z M43.8,55.6L2,97.7H17.6L43.8,71.3Z M43.8,29.4L0,73V88L43.8,45.6Z M50.6,0L62.2,10.2V97.7H50.6Z M68.9,17L80.7,27.7V97.7H68.9Z M88.2,34.6L99.8,45.3V97.7H88.2Z\"/></svg><i></i></div>';
     h += '</article><aside class="only-pc">' + sumHtml('p') + ctHtml('') + acHtml('') + '</aside></div>';
     h += ctHtml('m only-m') + acHtml('m only-m');
     if ((r.prev || []).length){
@@ -333,22 +372,49 @@ body.pre .tb .bk,body.pre .pv a,body.pre .ac a{pointer-events:none}
     var d = document.documentElement, max = d.scrollHeight - d.clientHeight;
     $('pgb').style.width = (max > 0 ? Math.min(100, Math.max(0, d.scrollTop / max * 100)) : 0) + '%';
     var hero = document.querySelector('.hero');
-    $('bar').classList.toggle('on', !!hero && hero.getBoundingClientRect().bottom < 0 && !$('dim').classList.contains('on'));
+    $('bar').classList.toggle('on', !!hero && hero.getBoundingClientRect().bottom < 0 && !$('dim').classList.contains('on') && !$('shd').classList.contains('on'));
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll);
 
-  /* 공유 — 받은 분이 열어도 같은 리포트. 맞춤 링크 코드(c)는 넘기지 않는다(받은 분의 열람이 보낸 분 기록에 섞이지 않게) */
-  async function share(){
+  /* 공유 — 자체 공유 창. 받은 분이 열어도 같은 리포트. 맞춤 링크 코드(c)는 넘기지 않는다(받은 분의 열람이 보낸 분 기록에 섞이지 않게)
+     · 폰: 앱으로 보내기(카카오톡 등) · 링크 복사 · 문자 / PC: 링크 복사 (PC 기본 공유창은 보낼 앱이 없어 오류가 나므로 쓰지 않음) */
+  var IC = {
+    app:'<svg viewBox="0 0 24 24" fill="none" stroke="#7A5C2C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>',
+    link:'<svg viewBox="0 0 24 24" fill="none" stroke="#7A5C2C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>',
+    sms:'<svg viewBox="0 0 24 24" fill="none" stroke="#7A5C2C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>'
+  };
+  function shareUrl(){ return location.origin + base + 'report?r=' + encodeURIComponent(RID); }
+  function shareText(){ return (REP ? REP.title : 'ICM INSIGHT') + ' — ICM 기업경영연구소'; }
+  function share(){
     if (PRE){ toast('미리보기에서는 공유되지 않습니다'); return; }
-    var url = location.origin + base + 'report?r=' + encodeURIComponent(RID);
-    var title = REP ? REP.title : 'ICM INSIGHT';
-    try{
-      if (navigator.share){ await navigator.share({ title: title, text: title + ' — ICM 기업경영연구소', url: url }); return; }
-    }catch(e){ if (e && e.name === 'AbortError') return; }
-    try{ await navigator.clipboard.writeText(url); toast('링크를 복사했습니다. 메시지에 붙여 넣어 보내세요.'); }
-    catch(_){ prompt('아래 링크를 복사해 보내세요', url); }
+    var mobile = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+    var g = $('shg'), h = '';
+    if (mobile && navigator.share) h += '<button type="button" data-k="app">' + IC.app + '앱으로 보내기</button>';
+    h += '<button type="button" data-k="link">' + IC.link + '링크 복사</button>';
+    if (mobile) h += '<button type="button" data-k="sms">' + IC.sms + '문자</button>';
+    g.innerHTML = h;
+    Array.prototype.forEach.call(g.querySelectorAll('button'), function(b){ b.onclick = function(){ shareDo(b.getAttribute('data-k')); }; });
+    $('shd').classList.add('on'); onScroll();
   }
+  function shareClose(){ $('shd').classList.remove('on'); onScroll(); }
+  async function shareDo(k){
+    var url = shareUrl(), text = shareText();
+    if (k === 'app'){
+      try{ await navigator.share({ title: REP ? REP.title : 'ICM INSIGHT', text: text, url: url }); shareClose(); }
+      catch(e){ if (!e || e.name !== 'AbortError') toast('앱 공유를 열지 못했습니다. 링크 복사를 이용해 주세요.'); }
+      return;
+    }
+    if (k === 'sms'){ location.href = 'sms:?&body=' + encodeURIComponent(text + '\n' + url); shareClose(); return; }
+    var ok = false;
+    try{ await navigator.clipboard.writeText(url); ok = true; }catch(_){
+      try{ var ta = document.createElement('textarea'); ta.value = url; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); ok = document.execCommand('copy'); document.body.removeChild(ta); }catch(_e){}
+    }
+    if (ok){ shareClose(); toast('링크를 복사했습니다. 메시지에 붙여 넣어 보내세요.'); }
+    else prompt('아래 링크를 복사해 보내세요', url);
+  }
+  $('shx').onclick = shareClose;
+  $('shd').addEventListener('click', function(e){ if (e.target === $('shd')) shareClose(); });
 
   /* 상담 신청 — 브로슈어 상담 팝업과 같은 항목·검사·서버 함수 */
   function openForm(){
