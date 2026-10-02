@@ -553,6 +553,7 @@
       var u = String((r && r.homeUrl) || '');
       if (/^https?:\/\//i.test(u)){ ICM_HOME = u; lastKey = ''; draw(); }
       if (r && r.report && r.report.id && r.report.title){ REP = r.report; lastKey = ''; draw(); }   /* ★ [2026-10-01] 표지 리포트 */
+      if (r && r.consensus && r.consensus.title && /^https:\/\/jarvia\.co\.kr\/consensus\.html\?/.test(String(r.consensus.url || ''))){ MC = r.consensus; lastKey = ''; draw(); }   /* ★ [2026-10-02] 표지 모닝컨센서스 */
       if (r && r.link) linkStart(r.link);
     }).catch(function(){});
   }
@@ -705,6 +706,7 @@
      · 크기는 표지 기준 좌표(1357×1920)로 공유하기처럼 지면을 따라간다. 작은 화면에서도 읽히도록 최소 글자 크기를 둔다
      · 누르면 같은 창에서 ebook.icm.re.kr/{아이디}/report?r=… 로 이동(맞춤 링크 코드 c 는 이어서 넘김) */
   var REP = null;
+  var MC = null;   /* ★ [2026-10-02] 표지 모닝컨센서스 — 회원이 켠 경우만 서버가 { title, date, url } 를 준다 */
   /* ★ [2026-10-01] 외부 홈페이지 열기 — 출처 정보(Referer)를 보내지 않고, 카카오톡 안 브라우저에서는 폰 기본 브라우저로 연다
      (consultant.re.kr 서버가 카카오톡 인앱 접속·외부 유입을 403 으로 막는 경우 대비) */
   function openOut(url){
@@ -717,64 +719,83 @@
     var q = 'r=' + encodeURIComponent(REP.id) + (LNK.c ? '&c=' + encodeURIComponent(LNK.c) + (LNK.f ? '&f=1' : '') : '');
     location.href = '/' + encodeURIComponent(MID) + '/report?' + q;
   }
+  /* ★ [2026-10-02] 모닝컨센서스 보기 — 회원의 고객 미지정 링크(최신호)를 같은 창에서 연다 */
+  function mcGo(){ if (MC && MC.url) location.href = MC.url; }
   function placeRep(rects, pages){
     var el = document.getElementById('icm-rep');
     var i1 = (pages || []).indexOf(1), r = i1 < 0 ? null : (rects || [])[i1];
-    if (!REP || !r || r.width < 120){ if (el) el.style.display = 'none'; return; }
+    if ((!REP && !MC) || !r || r.width < 120){ if (el) el.style.display = 'none'; return; }
     if (!document.getElementById('icm-rep-css')){
       var lk = document.createElement('link'); lk.rel = 'stylesheet';
       lk.href = 'https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700&display=swap';
       document.head.appendChild(lk);
       var st = document.createElement('style'); st.id = 'icm-rep-css';
-      st.textContent = '#icm-rep{position:fixed!important;z-index:2147483639;display:flex;flex-direction:column;align-items:flex-start;text-align:left;cursor:pointer;font-family:' + FONT + ';color:#F4ECDF;-webkit-tap-highlight-color:transparent}'
+      /* ★ [2026-10-02] 두 항목(모닝컨센서스·리포트) — 제목 85%, 큰 버튼 대신 작은 「보기」(컨센서스는 아랫줄 끝, 리포트는 제목 끝) */
+      st.textContent = '#icm-rep{position:fixed!important;z-index:2147483639;display:flex;flex-direction:column;align-items:flex-start;text-align:left;font-family:' + FONT + ';color:#F4ECDF;-webkit-tap-highlight-color:transparent}'
+        + '#icm-rep .it{display:flex;flex-direction:column;align-items:flex-start;max-width:100%;cursor:pointer;outline:none}'
         + '#icm-rep .l{display:flex;align-items:center;font-weight:700;color:#D9BE87;text-shadow:0 1px 3px rgba(0,0,0,.55);white-space:nowrap}'
         + '#icm-rep .l i{display:inline-block;height:1px;background:#D9BE87}'
         + '#icm-rep .t{font-family:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;font-weight:700;line-height:1.45;letter-spacing:-.02em;word-break:keep-all;color:#F4ECDF;text-shadow:0 1px 2px rgba(0,0,0,.6),0 0 14px rgba(20,15,12,.45);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}'
-        + '#icm-rep .m{color:#D8CDBD;text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}'
-        + '#icm-rep .b{display:inline-flex;align-items:center;gap:.45em;border:1px solid rgba(217,190,135,.75);background:rgba(28,22,18,.28);color:#E4CD9C;font-weight:500;letter-spacing:.12em;white-space:nowrap;box-sizing:border-box}'
-        + '#icm-rep .b svg{flex-shrink:0}';
+        + '#icm-rep .m{display:flex;align-items:center;color:#D8CDBD;text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap;max-width:100%}'
+        + '#icm-rep .m span{overflow:hidden;text-overflow:ellipsis;min-width:0}'
+        + '#icm-rep .b{display:inline-flex;align-items:center;gap:.2em;border:1px solid rgba(217,190,135,.75);background:rgba(28,22,18,.28);color:#E4CD9C;font-family:' + FONT + ';font-weight:500;letter-spacing:.06em;white-space:nowrap;box-sizing:border-box;vertical-align:middle;text-shadow:none;flex-shrink:0}'
+        + '#icm-rep .b svg{flex-shrink:0}#icm-rep .t .b{margin-left:.1em}';
       document.head.appendChild(st);
     }
     if (!el){
-      el = document.createElement('div'); el.id = 'icm-rep'; el.setAttribute('role', 'link'); el.tabIndex = 0;
-      el.onclick = repGo;
-      el.onkeydown = function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); repGo(); } };
+      el = document.createElement('div'); el.id = 'icm-rep';
+      el.onclick = function(e){ var it = e.target.closest && e.target.closest('.it'); if (!it) return; if (it.getAttribute('data-k') === 'mc') mcGo(); else repGo(); };
+      el.onkeydown = function(e){ var it = e.target.closest && e.target.closest('.it'); if (!it || (e.key !== 'Enter' && e.key !== ' ')) return; e.preventDefault(); if (it.getAttribute('data-k') === 'mc') mcGo(); else repGo(); };
       document.body.appendChild(el);
     }
-    if (el.getAttribute('data-id') !== REP.id){
-      el.setAttribute('data-id', REP.id);
-      el.setAttribute('aria-label', '리포트 보기: ' + REP.title);
-      el.innerHTML = '<div class="l"><i></i>ICM INSIGHT</div><div class="t">' + repEsc(REP.title) + '</div>'
-        + '<div class="m">' + repEsc(REP.author ? REP.author + ' 전문위원' : '') + (REP.month ? (REP.author ? ' · ' : '') + repEsc(REP.month) : '') + '</div>'
-        + '<span class="b">리포트 보기<svg viewBox="0 0 24 24" fill="none" stroke="#E4CD9C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>';
+    var pill = '<span class="b">보기<svg viewBox="0 0 24 24" fill="none" stroke="#E4CD9C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>';
+    var key = (MC ? MC.date + '|' + MC.title : '') + '#' + (REP ? REP.id : '');
+    if (el.getAttribute('data-id') !== key){
+      el.setAttribute('data-id', key);
+      el.innerHTML = (MC ? '<div class="it" data-k="mc" role="link" tabindex="0" aria-label="' + repEsc('모닝 컨센서스 보기: ' + MC.title) + '">'
+          + '<div class="l"><i></i>MORNING CONSENSUS</div><div class="t">' + repEsc(MC.title) + '</div>'
+          + '<div class="m"><span>' + repEsc(MC.date ? MC.date + ' · ' : '') + '오늘의 시장 전망과 투자 전략</span>' + pill + '</div></div>' : '')
+        + (REP ? '<div class="it" data-k="rep" role="link" tabindex="0" aria-label="' + repEsc('리포트 보기: ' + REP.title) + '">'
+          + '<div class="l"><i></i>ICM INSIGHT</div><div class="t">' + repEsc(REP.title) + ' ' + pill + '</div>'
+          + '<div class="m"><span>' + repEsc(REP.author ? REP.author + ' 전문위원' : '') + (REP.month ? (REP.author ? ' · ' : '') + repEsc(REP.month) : '') + '</span></div></div>' : '');
     }
     if (!document.body.contains(el)) document.body.appendChild(el);
     el.style.display = 'flex';
     var sx = r.width / PW, sy = r.height / PH;
-    var fT = Math.max(13.5, 43.6 * sx), fL = Math.max(8.5, 20.8 * sx), fM = Math.max(10, 22.7 * sx), fB = Math.max(10.5, 22.7 * sx), hB = Math.max(26, 57 * sy);
+    var fT = Math.max(12.5, 37 * sx), fL = Math.max(8.5, 20.8 * sx), fM = Math.max(10, 22.7 * sx), fB = Math.max(9.5, 19 * sx), hB = Math.max(19, 40 * sy);
     el.style.left = (r.left + 91 * sx) + 'px';
-    el.style.width = Math.min(r.width * 0.62, 796 * sx * Math.max(1, fT / (43.6 * sx))) + 'px';
-    el.style.gap = Math.max(4, 19 * sy) + 'px';
-    var l = el.querySelector('.l'), t = el.querySelector('.t'), m = el.querySelector('.m'), b = el.querySelector('.b'), sv = b.querySelector('svg');
-    l.style.fontSize = fL + 'px'; l.style.letterSpacing = (fL * 0.32) + 'px'; l.style.gap = (fL * 0.9) + 'px';
-    l.querySelector('i').style.width = Math.max(14, 42 * sx) + 'px';
-    t.style.fontSize = fT + 'px';
-    m.style.fontSize = fM + 'px';
-    b.style.fontSize = fB + 'px'; b.style.height = hB + 'px'; b.style.padding = '0 ' + Math.max(10, 26 * sx) + 'px'; b.style.borderRadius = (hB / 2) + 'px';
-    b.style.marginTop = Math.max(2, 6 * sy) + 'px';
-    sv.style.width = sv.style.height = Math.max(10, fB) + 'px';
+    el.style.width = Math.min(r.width * 0.62, 796 * sx * Math.max(1, fT / (37 * sx))) + 'px';
+    el.style.gap = Math.max(10, 52 * sy) + 'px';
+    el.querySelectorAll('.it').forEach(function(it){
+      it.style.gap = Math.max(3, 15 * sy) + 'px';
+      var l = it.querySelector('.l'), t = it.querySelector('.t'), m = it.querySelector('.m');
+      l.style.fontSize = fL + 'px'; l.style.letterSpacing = (fL * 0.32) + 'px'; l.style.gap = (fL * 0.9) + 'px';
+      l.querySelector('i').style.width = Math.max(14, 42 * sx) + 'px';
+      t.style.fontSize = fT + 'px';
+      m.style.fontSize = fM + 'px'; m.style.gap = (fM * 0.55) + 'px';
+    });
+    el.querySelectorAll('.b').forEach(function(b){
+      var sv = b.querySelector('svg');
+      b.style.fontSize = fB + 'px'; b.style.height = hB + 'px'; b.style.padding = '0 ' + Math.max(7, 15 * sx) + 'px 0 ' + Math.max(8, 17 * sx) + 'px'; b.style.borderRadius = (hB / 2) + 'px';
+      sv.style.width = sv.style.height = Math.max(9, fB * 0.95) + 'px';
+    });
     /* ★ 제목 줄바꿈 — 한 줄에 들어가면 한 줄, 넘치면 두 줄 길이가 비슷하게(마지막 줄에 한 단어만 남지 않게) */
-    t.style.width = ''; t.style.display = 'block';
-    var lh = parseFloat(getComputedStyle(t).lineHeight) || fT * 1.45, full = t.clientWidth;
-    if (Math.round(t.offsetHeight / lh) === 2){
-      var lo = full * 0.5, hi = full;
-      for (var k = 0; k < 9; k++){ var mid = (lo + hi) / 2; t.style.width = mid + 'px'; if (Math.round(t.offsetHeight / lh) > 2) lo = mid; else hi = mid; }
-      t.style.width = Math.ceil(hi) + 1 + 'px';
-    }
-    t.style.display = '';
+    el.querySelectorAll('.t').forEach(function(t){
+      t.style.width = ''; t.style.display = 'block';
+      var lh = parseFloat(getComputedStyle(t).lineHeight) || fT * 1.45, full = t.clientWidth;
+      if (Math.round(t.offsetHeight / lh) === 2){
+        var lo = full * 0.5, hi = full;
+        for (var k = 0; k < 9; k++){ var mid = (lo + hi) / 2; t.style.width = mid + 'px'; if (Math.round(t.offsetHeight / lh) > 2) lo = mid; else hi = mid; }
+        t.style.width = Math.ceil(hi) + 1 + 'px';
+      }
+      t.style.display = '';
+    });
+    /* 컨센서스 아랫줄이 좁아 잘리면 날짜만 남긴다(「보기」는 항상 보이게) */
+    var mm = el.querySelector('.it[data-k="mc"] .m span');
+    if (mm){ mm.textContent = (MC.date ? MC.date + ' · ' : '') + '오늘의 시장 전망과 투자 전략'; if (MC.date && mm.scrollWidth > mm.clientWidth + 1) mm.textContent = MC.date; }
     el.style.top = '0px';
     var hgt = el.offsetHeight;
-    el.style.top = Math.max(r.top + 1080 * sy, r.top + 1852 * sy - hgt) + 'px';   /* 버튼 아랫선을 공유하기 아랫선에 맞추고, ICM 로고 쪽으로는 넘지 않게 */
+    el.style.top = Math.max(r.top + (MC ? 700 : 1080) * sy, r.top + 1852 * sy - hgt) + 'px';   /* 마지막 줄 아랫선을 공유하기 아랫선에 맞추고, ICM 로고 쪽으로는 넘지 않게(두 항목이면 위로 더 여유) */
   }
 
   /* ════ 보내기 모드 창 — 고객 선택 / 일반 링크 ════ */
