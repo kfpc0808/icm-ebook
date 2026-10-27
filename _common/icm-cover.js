@@ -718,7 +718,7 @@
     });
     el.querySelectorAll('.b').forEach(function(b){
       var sv = b.querySelector('svg');
-      var hC = Math.max(22, 46 * sy);   /* ★ 원형 화살표 크기 — 작은 폰에서도 22px 이상 */
+      var hC = Math.max(22, 46 * sy) * 0.7;   /* ★ 원형 화살표 크기 — [2026-10-27] 기존(최소 22px)의 70% */
       b.style.width = b.style.height = hC + 'px';
       sv.style.width = sv.style.height = Math.round(hC * 0.56) + 'px';
     });
