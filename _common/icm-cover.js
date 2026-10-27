@@ -488,7 +488,9 @@
     callFn('brochureInfo', { id: MID, c: LNK.c || undefined, f: LNK.f ? 1 : undefined, vid: LNK.c ? LNK.vid : undefined }).then(function(r){
       var u = String((r && r.homeUrl) || '');
       if (/^https?:\/\//i.test(u)){ ICM_HOME = u; lastKey = ''; draw(); }
-      if (r && r.report && r.report.id && r.report.title){ REP = r.report; lastKey = ''; draw(); }   /* ★ [2026-10-01] 표지 리포트 */
+      /* ★ [2026-10-01] 표지 리포트 · [2026-10-27] 최대 2개(reports, 최근에 건 순). 예전 서버(report 1개)도 그대로 받는다 */
+      var reps = (r && Array.isArray(r.reports) ? r.reports : (r && r.report ? [r.report] : [])).filter(function(x){ return x && x.id && x.title; }).slice(0, 2);
+      if (reps.length){ REPS = reps; REP = reps[0]; lastKey = ''; draw(); }
       if (r && r.consensus && r.consensus.title && /^https:\/\/(mypb\.kr|jarvia\.co\.kr)\/consensus\.html\?/.test(String(r.consensus.url || ''))){ MC = r.consensus; lastKey = ''; draw(); }   /* ★ [2026-10-02] 표지 모닝컨센서스 · [2026-10-27] mypb.kr 링크 허용 */
       if (r && r.link) linkStart(r.link);
     }).catch(function(){});
@@ -642,6 +644,7 @@
      · 크기는 표지 기준 좌표(1357×1920)로 공유하기처럼 지면을 따라간다. 작은 화면에서도 읽히도록 최소 글자 크기를 둔다
      · 누르면 같은 창에서 ebook.icm.re.kr/{아이디}/report?r=… 로 이동(맞춤 링크 코드 c 는 이어서 넘김) */
   var REP = null;
+  var REPS = [];   /* ★ [2026-10-27] 게시중 리포트 최대 2개 — 컨센서스가 켜져 있으면 표지에는 첫 번째(최근에 건 글)만 */
   var MC = null;   /* ★ [2026-10-02] 표지 모닝컨센서스 — 회원이 켠 경우만 서버가 { title, date, url } 를 준다 */
   /* ★ [2026-10-01] 외부 홈페이지 열기 — 출처 정보(Referer)를 보내지 않고, 카카오톡 안 브라우저에서는 폰 기본 브라우저로 연다
      (consultant.re.kr 서버가 카카오톡 인앱 접속·외부 유입을 403 으로 막는 경우 대비) */
@@ -650,9 +653,10 @@
     window.open(url, '_blank', 'noopener,noreferrer');
   }
   function repEsc(v){ var d = document.createElement('div'); d.textContent = v == null ? '' : String(v); return d.innerHTML; }
-  function repGo(){
-    if (!REP || !MID) return;
-    var q = 'r=' + encodeURIComponent(REP.id) + (LNK.c ? '&c=' + encodeURIComponent(LNK.c) + (LNK.f ? '&f=1' : '') : '');
+  function repGo(i){
+    var rp = REPS[i || 0] || REP;
+    if (!rp || !MID) return;
+    var q = 'r=' + encodeURIComponent(rp.id) + (LNK.c ? '&c=' + encodeURIComponent(LNK.c) + (LNK.f ? '&f=1' : '') : '');
     location.href = '/' + encodeURIComponent(MID) + '/report?' + q;
   }
   /* ★ [2026-10-02] 모닝컨센서스 보기 — 회원의 고객 미지정 링크(최신호)를 같은 창에서 연다 */
@@ -680,20 +684,22 @@
     }
     if (!el){
       el = document.createElement('div'); el.id = 'icm-rep';
-      el.onclick = function(e){ var it = e.target.closest && e.target.closest('.it'); if (!it) return; if (it.getAttribute('data-k') === 'mc') mcGo(); else repGo(); };
-      el.onkeydown = function(e){ var it = e.target.closest && e.target.closest('.it'); if (!it || (e.key !== 'Enter' && e.key !== ' ')) return; e.preventDefault(); if (it.getAttribute('data-k') === 'mc') mcGo(); else repGo(); };
+      el.onclick = function(e){ var it = e.target.closest && e.target.closest('.it'); if (!it) return; if (it.getAttribute('data-k') === 'mc') mcGo(); else repGo(+it.getAttribute('data-i') || 0); };
+      el.onkeydown = function(e){ var it = e.target.closest && e.target.closest('.it'); if (!it || (e.key !== 'Enter' && e.key !== ' ')) return; e.preventDefault(); if (it.getAttribute('data-k') === 'mc') mcGo(); else repGo(+it.getAttribute('data-i') || 0); };
       document.body.appendChild(el);
     }
     var pill = '<span class="b">보기<svg viewBox="0 0 24 24" fill="none" stroke="#E4CD9C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>';
-    var key = (MC ? MC.date + '|' + MC.title : '') + '#' + (REP ? REP.id : '');
+    /* ★ [2026-10-27] 표지에는 최대 2개 — 컨센서스 켬: 컨센서스 + 리포트 1 / 끔: 리포트 2 */
+    var shown = (REPS.length ? REPS : (REP ? [REP] : [])).slice(0, MC ? 1 : 2);
+    var key = (MC ? MC.date + '|' + MC.title : '') + '#' + shown.map(function(x){ return x.id; }).join(',');
     if (el.getAttribute('data-id') !== key){
       el.setAttribute('data-id', key);
       el.innerHTML = (MC ? '<div class="it" data-k="mc" role="link" tabindex="0" aria-label="' + repEsc('모닝 컨센서스 보기: ' + MC.title) + '">'
           + '<div class="l"><i></i>MORNING CONSENSUS</div><div class="t">' + repEsc(MC.title) + '</div>'
           + '<div class="m"><span>' + repEsc(MC.date ? MC.date + ' · ' : '') + '오늘의 시장 전망과 투자 전략</span>' + pill + '</div></div>' : '')
-        + (REP ? '<div class="it" data-k="rep" role="link" tabindex="0" aria-label="' + repEsc('리포트 보기: ' + REP.title) + '">'
-          + '<div class="l"><i></i>ICM INSIGHT</div><div class="t">' + repEsc(REP.title) + ' ' + pill + '</div>'
-          + '<div class="m"><span>' + repEsc(REP.author ? REP.author + ' 전문위원' : '') + (REP.month ? (REP.author ? ' · ' : '') + repEsc(REP.month) : '') + '</span></div></div>' : '');
+        + shown.map(function(rp, i){ return '<div class="it" data-k="rep" data-i="' + i + '" role="link" tabindex="0" aria-label="' + repEsc('리포트 보기: ' + rp.title) + '">'
+          + '<div class="l"><i></i>ICM INSIGHT</div><div class="t">' + repEsc(rp.title) + ' ' + pill + '</div>'
+          + '<div class="m"><span>' + repEsc(rp.author ? rp.author + ' 전문위원' : '') + (rp.month ? (rp.author ? ' · ' : '') + repEsc(rp.month) : '') + '</span></div></div>'; }).join('');
     }
     if (!document.body.contains(el)) document.body.appendChild(el);
     el.style.display = 'flex';
@@ -731,7 +737,8 @@
     if (mm){ mm.textContent = (MC.date ? MC.date + ' · ' : '') + '오늘의 시장 전망과 투자 전략'; if (MC.date && mm.scrollWidth > mm.clientWidth + 1) mm.textContent = MC.date; }
     el.style.top = '0px';
     var hgt = el.offsetHeight;
-    el.style.top = Math.max(r.top + (MC ? 700 : 1080) * sy, r.top + 1852 * sy - hgt) + 'px';   /* 마지막 줄 아랫선을 공유하기 아랫선에 맞추고, ICM 로고 쪽으로는 넘지 않게(두 항목이면 위로 더 여유) */
+    var UP = 195;   /* ★ [2026-10-27] 표지 글 묶음을 표지 기준 195px(표지 높이의 약 10%) 위로 — 아랫선 1852→1657, ICM 로고 아래(620)는 넘지 않게 */
+    el.style.top = Math.max(r.top + Math.max(620, ((MC || shown.length > 1) ? 700 : 1080) - UP) * sy, r.top + (1852 - UP) * sy - hgt) + 'px';   /* 마지막 줄 아랫선을 공유하기 아랫선에 맞추고, ICM 로고 쪽으로는 넘지 않게(두 항목이면 위로 더 여유) */
   }
 
   /* ════ 보내기 모드 창 — 고객 선택 / 일반 링크 ════ */
