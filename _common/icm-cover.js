@@ -678,7 +678,7 @@
         + '#icm-rep .t{font-family:"Noto Serif KR","Nanum Myeongjo",Georgia,serif;font-weight:700;line-height:1.45;letter-spacing:-.02em;word-break:keep-all;color:#F4ECDF;text-shadow:0 1px 2px rgba(0,0,0,.6),0 0 14px rgba(20,15,12,.45);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}'
         + '#icm-rep .m{display:flex;align-items:center;color:#D8CDBD;text-shadow:0 1px 2px rgba(0,0,0,.6);white-space:nowrap;max-width:100%}'
         + '#icm-rep .m span{overflow:hidden;text-overflow:ellipsis;min-width:0}'
-        + '#icm-rep .b{display:inline-flex;align-items:center;gap:.2em;border:1px solid rgba(217,190,135,.75);background:rgba(28,22,18,.28);color:#E4CD9C;font-family:' + FONT + ';font-weight:500;letter-spacing:.06em;white-space:nowrap;box-sizing:border-box;vertical-align:middle;text-shadow:none;flex-shrink:0}'
+        + '#icm-rep .b{display:inline-flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:50%;background:#D9BE87;color:#241E19;box-shadow:0 1px 4px rgba(0,0,0,.35);box-sizing:border-box;vertical-align:middle;text-shadow:none;flex-shrink:0}'   /* ★ [2026-10-27] 「보기」 → 금색 원형 화살표 */
         + '#icm-rep .b svg{flex-shrink:0}#icm-rep .t .b{margin-left:.1em}';
       document.head.appendChild(st);
     }
@@ -688,7 +688,7 @@
       el.onkeydown = function(e){ var it = e.target.closest && e.target.closest('.it'); if (!it || (e.key !== 'Enter' && e.key !== ' ')) return; e.preventDefault(); if (it.getAttribute('data-k') === 'mc') mcGo(); else repGo(+it.getAttribute('data-i') || 0); };
       document.body.appendChild(el);
     }
-    var pill = '<span class="b">보기<svg viewBox="0 0 24 24" fill="none" stroke="#E4CD9C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>';
+    var pill = '<span class="b" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#241E19" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"/></svg></span>';   /* ★ [2026-10-27] 금색 원형 화살표 — 누르는 곳은 항목 전체(.it) */
     /* ★ [2026-10-27] 표지에는 최대 2개 — 컨센서스 켬: 컨센서스 + 리포트 1 / 끔: 리포트 2 */
     var shown = (REPS.length ? REPS : (REP ? [REP] : [])).slice(0, MC ? 1 : 2);
     var key = (MC ? MC.date + '|' + MC.title : '') + '#' + shown.map(function(x){ return x.id; }).join(',');
@@ -718,13 +718,19 @@
     });
     el.querySelectorAll('.b').forEach(function(b){
       var sv = b.querySelector('svg');
-      b.style.fontSize = fB + 'px'; b.style.height = hB + 'px'; b.style.padding = '0 ' + Math.max(7, 15 * sx) + 'px 0 ' + Math.max(8, 17 * sx) + 'px'; b.style.borderRadius = (hB / 2) + 'px';
-      sv.style.width = sv.style.height = Math.max(9, fB * 0.95) + 'px';
+      var hC = Math.max(22, 46 * sy);   /* ★ 원형 화살표 크기 — 작은 폰에서도 22px 이상 */
+      b.style.width = b.style.height = hC + 'px';
+      sv.style.width = sv.style.height = Math.round(hC * 0.56) + 'px';
     });
     /* ★ 제목 줄바꿈 — 한 줄에 들어가면 한 줄, 넘치면 두 줄 길이가 비슷하게(마지막 줄에 한 단어만 남지 않게) */
     el.querySelectorAll('.t').forEach(function(t){
+      /* ★ [2026-10-27] 리포트 「보기」 — 제목 끝에 두되, 제목이 두 줄을 넘쳐 잘리면 아랫줄(전문위원·날짜) 끝으로 옮긴다 */
+      var it = t.parentNode, isRep = it.getAttribute('data-k') === 'rep', m = it.querySelector('.m'), pb = isRep ? it.querySelector('.m > .b') : null;
+      if (pb){ t.appendChild(pb); }   /* 컨센서스는 원래부터 아랫줄 끝이라 건드리지 않는다 */
       t.style.width = ''; t.style.display = 'block';
       var lh = parseFloat(getComputedStyle(t).lineHeight) || fT * 1.45, full = t.clientWidth;
+      var tb = isRep ? t.querySelector('.b') : null;
+      if (tb && m && Math.round(t.offsetHeight / lh) > 2){ m.appendChild(tb); }
       if (Math.round(t.offsetHeight / lh) === 2){
         var lo = full * 0.5, hi = full;
         for (var k = 0; k < 9; k++){ var mid = (lo + hi) / 2; t.style.width = mid + 'px'; if (Math.round(t.offsetHeight / lh) > 2) lo = mid; else hi = mid; }
